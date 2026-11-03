@@ -1,0 +1,100 @@
+# portal-kit CI (ci-test-design tiers).
+#
+# check (T1 + the e2e its own change reaches): typecheck, unit/component tests and the
+#   Playwright suite in Chromium, in ONE job (one setup, one rounding). ~3 billed min.
+# engines (T3): the same e2e in Firefox and WebKit, nightly and on PRs that touch the
+#   CSP-sensitive paths (theme, charts, ui, styles, e2e). ~4 billed min.
+# Negative controls (recorded in the v0.1.0 PR): an inline-style theme writer fails the
+# CSP test; every scanDist / strictCspProblems rule has a planted failing input.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install (lockfile enforced, no install scripts)
+        run: npm ci --ignore-scripts
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit and component tests
+        run: npm test
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser tests (Chromium)
+        run: npm run e2e
+
+  engines:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Install Firefox and WebKit
+        run: npx playwright install --with-deps firefox webkit
+      - name: Browser tests (Firefox, WebKit)
+        env:
+          PK_BROWSERS: all
+        run: npx playwright test --project=firefox --project=webkit
+
+  csp-paths:
+    # On a PR touching CSP-sensitive code, run the other engines too.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - name: Did this PR touch a CSP-sensitive path?
+        id: paths
+        shell: bash
+        run: |
+          set -o pipefail
+          changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+          if grep -qE '^(src/(theme|charts|ui|styles)/|e2e/|demo/|playwright\.config\.ts|package-lock\.json)' <<<"$changed"; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No CSP-sensitive path changed; Firefox and WebKit run nightly."
+          fi
+      - if: steps.paths.outputs.run == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - if: steps.paths.outputs.run == 'true'
+        run: npm ci --ignore-scripts && npx playwright install --with-deps firefox webkit
+      - if: steps.paths.outputs.run == 'true'
+        env:
+          PK_BROWSERS: all
+        run: npx playwright test --project=firefox --project=webkit

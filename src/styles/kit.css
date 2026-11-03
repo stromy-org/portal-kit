@@ -1,0 +1,208 @@
+/* @stromy/portal-kit base styles. Tokens are custom properties; the runtime theme
+   overrides them with style.setProperty on :root. No component writes inline styles. */
+
+:root {
+  --pk-primary: #1f3a5f;
+  --pk-accent: #2f7d6d;
+  --pk-ink: #1b1f24;
+  --pk-surface: #ffffff;
+  --pk-muted: #5c6670;
+  --pk-font-heading: system-ui, sans-serif;
+  --pk-font-body: system-ui, sans-serif;
+  --pk-rule: color-mix(in srgb, var(--pk-ink) 14%, transparent);
+  --pk-series-0: var(--pk-primary);
+  --pk-series-1: var(--pk-accent);
+  --pk-series-2: #b5651d;
+  --pk-series-3: #7b4f9d;
+  --pk-series-4: #3b7dd8;
+  --pk-series-5: #8a8f2e;
+  --pk-series-6: #c0392b;
+  --pk-series-7: #5c6670;
+}
+
+body {
+  color: var(--pk-ink);
+  background: var(--pk-surface);
+  font-family: var(--pk-font-body);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--pk-font-heading);
+}
+
+:focus-visible {
+  outline: 3px solid var(--pk-accent);
+  outline-offset: 2px;
+}
+
+.pk-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.pk-button {
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--pk-primary);
+  border-radius: 4px;
+  background: var(--pk-surface);
+  color: var(--pk-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pk-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.pk-panel {
+  border: 1px solid var(--pk-rule);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin-block: 1rem;
+  break-inside: avoid;
+}
+
+.pk-panel__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.pk-panel__status {
+  color: var(--pk-muted);
+}
+
+.pk-panel__notes {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--pk-muted);
+}
+
+.pk-panel__notes h3 {
+  font-size: 0.9rem;
+  margin: 0 0 0.25rem;
+}
+
+.pk-table {
+  overflow-x: auto;
+}
+
+.pk-table table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.pk-table caption {
+  text-align: start;
+  font-weight: 600;
+  padding-block: 0.25rem;
+}
+
+.pk-table th,
+.pk-table td {
+  text-align: start;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--pk-rule);
+  vertical-align: top;
+}
+
+.pk-pagination {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.pk-drawer {
+  margin: 0 0 0 auto;
+  height: 100%;
+  max-height: 100%;
+  width: min(36rem, 100%);
+  border: none;
+  padding: 0;
+  background: var(--pk-surface);
+  color: var(--pk-ink);
+}
+
+.pk-drawer::backdrop {
+  background: color-mix(in srgb, var(--pk-ink) 40%, transparent);
+}
+
+.pk-drawer__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--pk-rule);
+}
+
+.pk-drawer__body {
+  padding: 1rem 1.25rem;
+}
+
+.pk-chart {
+  margin: 0;
+}
+
+.pk-chart figcaption {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.pk-chart svg text {
+  fill: var(--pk-ink);
+  font-size: 12px;
+}
+
+.pk-chart__grid {
+  stroke: var(--pk-rule);
+}
+
+.pk-chart__axis {
+  fill: var(--pk-muted);
+}
+
+.pk-line {
+  stroke-width: 2;
+  fill: none;
+}
+
+.pk-series-0 { fill: var(--pk-series-0); stroke: var(--pk-series-0); }
+.pk-series-1 { fill: var(--pk-series-1); stroke: var(--pk-series-1); }
+.pk-series-2 { fill: var(--pk-series-2); stroke: var(--pk-series-2); }
+.pk-series-3 { fill: var(--pk-series-3); stroke: var(--pk-series-3); }
+.pk-series-4 { fill: var(--pk-series-4); stroke: var(--pk-series-4); }
+.pk-series-5 { fill: var(--pk-series-5); stroke: var(--pk-series-5); }
+.pk-series-6 { fill: var(--pk-series-6); stroke: var(--pk-series-6); }
+.pk-series-7 { fill: var(--pk-series-7); stroke: var(--pk-series-7); }
+path.pk-line[class*="pk-series-"] { fill: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .pk-button {
+    transition: background-color 120ms ease;
+  }
+}
+
+@media print {
+  .pk-pagination,
+  .pk-button,
+  nav {
+    display: none;
+  }
+
+  .pk-chart__data > summary {
+    display: none;
+  }
+
+  .pk-panel {
+    border-color: #999;
+  }
+}
