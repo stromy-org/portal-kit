@@ -3,6 +3,16 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.1.1 — 2026-11-04
+
+- Every TSX source now names its JSX runtime (`@jsxImportSource preact`). Consumers
+  compile the kit from `node_modules`, where their own tsconfig does not apply, so the
+  bundler fell back to React's runtime and the consumer build failed on
+  `react/jsx-runtime`. Found rendering the portal-shell template; pinned by
+  `tests/consumer-jsx.test.ts`, which compiles each file as a consumer would.
+- `scripts/premerge-verify.sh`: the merged-tree verifier (org-core, generated agent
+  files, version agreement, `npm ci`, typecheck, unit tests).
+
 ## v0.1.0 — 2026-11-04
 
 First release (ORG-PLAN-369 P-KIT; design in stromy-org

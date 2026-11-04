@@ -1,3 +1,4 @@
+/** @jsxImportSource preact */
 /**
  * Every panel renders through PanelFrame, and PanelFrame shows numbers only in
  * `ready` (portal-shell.md decision 9). An empty, insufficient, unavailable, denied

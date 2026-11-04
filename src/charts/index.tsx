@@ -1,3 +1,4 @@
+/** @jsxImportSource preact */
 /**
  * Charts as hand-rolled SVG (portal-shell.md decision 8).
  *

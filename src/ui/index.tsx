@@ -1,3 +1,4 @@
+/** @jsxImportSource preact */
 /**
  * Accessible primitives (WCAG 2.2 AA): a real table, labelled pagination, a native
  * dialog drawer and one polite announcer. Styling is by class only; nothing here
