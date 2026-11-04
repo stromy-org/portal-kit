@@ -3,6 +3,18 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.1.2 — 2026-11-04
+
+Found by rendering the first portal-shell satellite against the kit:
+
+- `@types/d3-scale` and `@types/d3-shape` are now dependencies, not devDependencies.
+  Consumers type-check the kit's TypeScript source, so its type imports are part of its
+  public surface; without them a consumer's `tsc` failed on `charts/index.tsx`.
+- `scanDist` flags a `client_secret` VALUE (`client_secret=...`, `"client_secret":"..."`),
+  no longer the bare word: every real shell bundles MSAL, which names `client_secret` as a
+  protocol constant, so the old pattern failed every production build. Test built from
+  the exact minified MSAL 5 shape; negative control: the old pattern turns it red.
+
 ## v0.1.1 — 2026-11-04
 
 - Every TSX source now names its JSX runtime (`@jsxImportSource preact`). Consumers

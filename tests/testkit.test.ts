@@ -53,6 +53,16 @@ describe("scanDist", () => {
     }
   });
 
+  it("flags a client secret value but not MSAL's protocol constant (found in a real shell build)", () => {
+    // The exact shape a minified MSAL 5 bundle carries: the parameter NAME as a constant.
+    const msal = { ...CLEAN, "_astro/runtime.js": "Ce=`post_logout_redirect_uri`,we=`id_token_hint`,Te=`client_secret`,Ee=`client_assertion`" };
+    expect(scanDist(dist(msal), SCAN)).toEqual([]);
+    const leaked = { ...CLEAN, "_astro/cfg.js": 'const c={"client_secret":"Abc8Q~xyz0123456789longvalue"}' };
+    expect(scanDist(dist(leaked), SCAN).join("\n")).toContain("secret-shaped");
+    const query = { ...CLEAN, "_astro/q.js": "u+'&client_secret=Abc8Q~xyz0123456789long'" };
+    expect(scanDist(dist(query), SCAN).join("\n")).toContain("secret-shaped");
+  });
+
   it("refuses an empty build instead of passing it", () => {
     expect(scanDist(dist({ "index.html": "" }), SCAN)[0]).toContain("empty or broken");
   });
