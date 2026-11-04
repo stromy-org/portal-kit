@@ -67,6 +67,22 @@ describe("PanelFrame", () => {
     }
   });
 
+  it("keeps caveat notes out of the landmark tree, so many panels never repeat one", () => {
+    // Found by axe (landmark-unique) on a portal page with several panels carrying caveats.
+    const view = render(
+      <>
+        {[1, 2].map((i) => (
+          <PanelFrame key={i} title={`Panel ${i}`} state={{ k: "ready", data: result, caveats: [caveat] }}>
+            {() => <p>ok</p>}
+          </PanelFrame>
+        ))}
+      </>,
+    );
+    expect(view.container.querySelectorAll("aside, [role=complementary]").length).toBe(0);
+    expect(view.getAllByText("Coverage is partial.").length).toBe(2);
+    view.unmount();
+  });
+
   it("offers retry on transport failures but not on denial or expired sign-in", () => {
     for (const [state, retry] of [
       [{ k: "error", cls: "network" }, true],

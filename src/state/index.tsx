@@ -143,14 +143,16 @@ export function PanelFrame<T>(props: PanelFrameProps<T>) {
       <h2 class="pk-panel__title">{props.title}</h2>
       {body(s, w, props)}
       {"caveats" in s && s.caveats.length > 0 && (
-        <aside class="pk-panel__notes" aria-label={w.notes}>
+        // Not a landmark: a page shows many panels, and repeated complementary
+        // landmarks with one name fail WCAG landmark-unique (found by axe on a portal).
+        <div class="pk-panel__notes">
           <h3>{w.notes}</h3>
           <ul>
             {s.caveats.map((c) => (
               <li key={c.caveat_id}>{c.text}</li>
             ))}
           </ul>
-        </aside>
+        </div>
       )}
     </section>
   );

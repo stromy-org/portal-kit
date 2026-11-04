@@ -3,6 +3,13 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.1.3 — 2026-11-04
+
+- `PanelFrame` caveat notes are no longer an `<aside>` landmark. A portal page shows many
+  panels, and each one carrying caveats added a complementary landmark named "Notes", so
+  axe failed the page on `landmark-unique` (found on the first portal's pages). The notes
+  are a plain block with their heading; pinned by a test that fails on the old markup.
+
 ## v0.1.2 — 2026-11-04
 
 Found by rendering the first portal-shell satellite against the kit:

@@ -1,6 +1,6 @@
 {
   "name": "@stromy/portal-kit",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "The evolving parts of a Stromy portal shell: data contract, gatekeeper client, sign-in glue, router, panel states, accessible primitives, SVG charts, runtime theme and test kit.",
   "license": "UNLICENSED",
   "private": true,
