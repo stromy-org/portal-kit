@@ -145,7 +145,9 @@ export interface ScanOptions {
 const TEXT = /\.(html|js|mjs|css|json|txt|svg|xml|webmanifest)$/i;
 const DATA = /\.(json|csv|ndjson|parquet|duckdb|sqlite)$/i;
 const SECRET = [
-  /client_secret/i,
+  // A client secret VALUE, never the bare parameter name: MSAL's own bundle names
+  // `client_secret` as a protocol constant, and every real shell bundles MSAL.
+  /client_secret["'`]?\s*[:=]\s*["'`]?[A-Za-z0-9~._-]{16,}/i,
   /-----BEGIN [A-Z ]*PRIVATE KEY-----/,
   /\bBearer\s+[A-Za-z0-9._-]{20,}/,
   /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\./,
