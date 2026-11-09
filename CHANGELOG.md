@@ -3,6 +3,18 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.2.0 — 2026-11-10
+
+- New SVG visuals for the V2 design: `StanceMatrix`, `Quadrant` (voice by alignment),
+  `StageLadder`, `Hemicycle` and `Swimlanes`. Each is a figure with a summary and a data
+  table; stance is blue (for) against orange (against) with a polarity glyph or a shape;
+  two-axis charts draw named zero lines; marks are keyboard buttons only when a handler is
+  given. New stance tokens `--pk-sup/-opp/-mix` (and tints).
+- Layout helpers `wrapLabel`, `placeLabels` (no two labels, or a label and a mark, overlap;
+  a label that fits nowhere is left to the table) and `hemicycleSeats`, unit-tested.
+- Demo "Visuals" view; browser test: axe (open and closed tables), zero CSP violations,
+  keyboard activation.
+
 ## v0.1.3 — 2026-11-04
 
 - `PanelFrame` caveat notes are no longer an `<aside>` landmark. A portal page shows many

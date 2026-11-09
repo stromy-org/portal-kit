@@ -18,6 +18,13 @@
   --pk-series-5: #8a8f2e;
   --pk-series-6: #c0392b;
   --pk-series-7: #5c6670;
+  /* Stance inks: fixed across brands, colour-blind safe (blue for, orange against). */
+  --pk-sup: #2a78d6;
+  --pk-opp: #eb6834;
+  --pk-mix: #9a98a0;
+  --pk-sup-tint: #cde2fb;
+  --pk-opp-tint: #fbd5c3;
+  --pk-mix-tint: #e4e3e7;
 }
 
 body {
@@ -184,6 +191,38 @@ h3 {
 .pk-series-6 { fill: var(--pk-series-6); stroke: var(--pk-series-6); }
 .pk-series-7 { fill: var(--pk-series-7); stroke: var(--pk-series-7); }
 path.pk-line[class*="pk-series-"] { fill: none; }
+
+/* Rich visuals: stance marks are a light tint with a strong outline and an ink glyph. */
+.pk-stance { stroke-width: 2; }
+.pk-stance.pk-sup { fill: var(--pk-sup-tint); stroke: var(--pk-sup); }
+.pk-stance.pk-opp { fill: var(--pk-opp-tint); stroke: var(--pk-opp); }
+.pk-stance.pk-mix { fill: var(--pk-mix-tint); stroke: var(--pk-mix); }
+.pk-stance.pk-none { fill: none; stroke: var(--pk-mix); stroke-dasharray: 2 2; }
+.pk-chart svg text.pk-glyph { fill: var(--pk-ink); font-weight: 700; font-size: 13px; pointer-events: none; }
+.pk-chart svg text.pk-chart__group { font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; }
+.pk-chart svg text.pk-chart__axis { fill: var(--pk-muted); }
+.pk-zero { stroke: var(--pk-ink); stroke-width: 1.5; stroke-dasharray: 5 3; }
+.pk-bubble { fill-opacity: 0.8; stroke: var(--pk-surface); stroke-width: 1.5; }
+.pk-event { stroke: var(--pk-ink); stroke-width: 1; }
+.pk-quad { fill: transparent; }
+.pk-quad--for { fill: var(--pk-sup-tint); fill-opacity: 0.35; }
+.pk-quad--against { fill: var(--pk-opp-tint); fill-opacity: 0.35; }
+.pk-selected { stroke: var(--pk-ink); stroke-width: 2.5; }
+.pk-hit { cursor: pointer; outline: none; }
+.pk-hit:focus-visible .pk-hit__area, .pk-hit:focus-visible circle, .pk-hit:focus-visible polygon { outline: 3px solid var(--pk-accent); outline-offset: 2px; }
+.pk-hit__area { fill: transparent; }
+.pk-hit:hover .pk-hit__area { fill: var(--pk-rule); }
+.pk-ladder__rail { stroke: var(--pk-rule); stroke-width: 4; }
+.pk-ladder__done { stroke: var(--pk-primary); stroke-width: 4; }
+.pk-ladder__dot { stroke: var(--pk-primary); stroke-width: 2; fill: var(--pk-surface); }
+.pk-ladder__dot--done { fill: var(--pk-sup-tint); }
+.pk-ladder__dot--current { fill: var(--pk-primary); }
+.pk-chart svg .pk-ladder__dot--current + text.pk-glyph { fill: var(--pk-surface); }
+.pk-ladder__dot--next { stroke-dasharray: 3 2; }
+.pk-chart svg text.pk-ladder__state { font-weight: 700; fill: var(--pk-ink); }
+.pk-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; list-style: none; padding: 0; margin: 0.5rem 0; font-size: 0.9rem; }
+.pk-legend svg { vertical-align: middle; }
+.pk-legend .pk-glyph { fill: var(--pk-ink); font-size: 11px; }
 
 @media (prefers-reduced-motion: no-preference) {
   .pk-button {
