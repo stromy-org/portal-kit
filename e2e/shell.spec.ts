@@ -100,3 +100,30 @@ test("the built shell ships no data, maps or foreign origins", () => {
   });
   expect(problems).toEqual([]);
 });
+
+test("the rich visuals pass axe, raise no CSP violation, answer the keyboard and ship their tables", async ({ page }) => {
+  const violations = await watchCsp(page);
+  await page.goto("/app/eng_demo/2026-10/visuals/");
+  await expect(page.getByRole("heading", { level: 1, name: "Visuals" })).toBeVisible();
+  await expect(page.locator("figure.pk-visual")).toHaveCount(5);
+  // Keyboard: Tab to a matrix row and press Enter.
+  const actor = page.getByRole("button", { name: "Actor Demo Operator: open details" });
+  await actor.focus();
+  await expect(actor).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("[data-picked]")).toHaveText("a");
+  await page.getByRole("button", { name: "Issue Demo tariffs: open details" }).click();
+  await expect(page.locator("[data-picked]")).toHaveText("a · i1");
+  await page.getByRole("button", { name: /Demo decision postponed: open details/ }).click();
+  await expect(page.locator("[data-picked]")).toContainText("s1");
+  // Every figure has its table fallback, and the hemicycle draws all 110 seats.
+  await expect(page.locator("figure.pk-visual details table")).toHaveCount(5);
+  expect(await page.locator("figure.pk-visual").nth(3).locator("svg[role=img] > circle, svg[role=img] > rect, svg[role=img] > polygon").count()).toBe(110);
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+  expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
+  // Open every table: still no violation (the tables are real tables).
+  await page.locator("details > summary").evaluateAll((els) => els.forEach((e) => (e.parentElement as HTMLDetailsElement).open = true));
+  const again = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+  expect(again.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
+  expect(violations).toEqual([]);
+});
