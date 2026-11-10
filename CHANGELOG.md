@@ -3,6 +3,15 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.3.0 — 2026-11-10
+
+- `NetworkGraph`: a navigable actor-issue network / camps graph. CSP spike result: d3-force
+  is arithmetic only, run to rest with a fixed random source (deterministic), rendered as
+  plain SVG; pan and zoom write the `transform` attribute, never `style`. Zoom (wheel,
+  buttons, keys), pan (drag, arrows), labels re-placed per zoom without overlap, neighbourhood
+  highlight, solid-blue / dashed-orange / dotted-grey links, table fallback. Browser test
+  under the strict CSP in Chromium and WebKit, with a negative control.
+
 ## v0.2.0 — 2026-11-10
 
 - New SVG visuals for the V2 design: `StanceMatrix`, `Quadrant` (voice by alignment),
