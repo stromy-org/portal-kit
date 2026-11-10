@@ -3,6 +3,12 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.3.2 — 2026-11-10
+
+- `NetworkGraph` fits the settled layout to its frame (a small graph no longer sits in a
+  corner) and draws node labels with a surface-coloured halo, so an edge passing behind a
+  label never strikes it through.
+
 ## v0.3.1 — 2026-11-10
 
 - Wrapped labels in the stance matrix headers and swimlane names join their lines with a

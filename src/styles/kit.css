@@ -257,3 +257,4 @@ path.pk-line[class*="pk-series-"] { fill: none; }
 .pk-node { stroke: var(--pk-surface); stroke-width: 1.5; }
 .pk-node--issue { stroke: var(--pk-ink); stroke-width: 1.5; fill-opacity: 0.55; }
 .pk-faded { opacity: 0.18; }
+.pk-network .pk-chart__label { paint-order: stroke; stroke: var(--pk-surface); stroke-width: 3px; stroke-linejoin: round; }
