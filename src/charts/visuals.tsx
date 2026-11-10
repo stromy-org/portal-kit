@@ -591,7 +591,7 @@ export function Swimlanes(props: SwimlanesProps) {
   const height = props.lanes.length * laneH + axisH + 6;
   const fmt = (d: Date) => d.toISOString().slice(5, 10);
   const ticks = x.ticks(Math.min(6, Math.max(2, Math.round(span / DAY / 2))));
-  const summary = `${plural(props.lanes.length, "story", "stories")} over ${Math.max(1, Math.round((hi - lo) / DAY) + 1)} days. Dots are days of coverage, sized by documents; diamonds are events such as votes or postponements.`;
+  const summary = `${plural(props.lanes.length, "story", "stories")} over ${Math.max(1, Math.round((hi - lo) / DAY) + 1)} days. Dots are days of coverage, sized by documents; diamonds above the line are events such as votes or postponements.`;
   const kindOf = (e: LaneEvent) => (e.kind === "event" ? "event" : "coverage");
   return (
     <Frame
@@ -655,7 +655,7 @@ export function Swimlanes(props: SwimlanesProps) {
               const isEvent = kindOf(e) === "event";
               const name = `${lane.label}, ${e.at}: ${isEvent ? "event" : "coverage"}${e.size ? `, ${plural(e.size, "document")}` : ""}${e.label ? `, ${e.label}` : ""}`;
               const mark = isEvent ? (
-                <polygon class="pk-series-2 pk-event" points={`${cx},${mid - r - 2} ${cx + r + 2},${mid} ${cx},${mid + r + 2} ${cx - r - 2},${mid}`} />
+                <polygon class="pk-series-2 pk-event" points={`${cx},${mid - 21 - 7} ${cx + 7},${mid - 21} ${cx},${mid - 21 + 7} ${cx - 7},${mid - 21}`} />
               ) : (
                 <circle class="pk-series-0 pk-bubble" cx={cx} cy={mid} r={r} />
               );
