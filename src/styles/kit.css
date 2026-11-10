@@ -245,3 +245,15 @@ path.pk-line[class*="pk-series-"] { fill: none; }
     border-color: #999;
   }
 }
+
+/* Network graph */
+.pk-network__tools { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+.pk-network__hint { color: var(--pk-muted); font-size: 0.85rem; }
+.pk-network__svg { touch-action: none; cursor: grab; border: 1px solid var(--pk-rule); border-radius: 6px; }
+.pk-edge { fill: none; }
+.pk-edge--sup { stroke: var(--pk-sup); }
+.pk-edge--opp { stroke: var(--pk-opp); stroke-dasharray: 7 4; }
+.pk-edge--mix { stroke: var(--pk-mix); stroke-dasharray: 2 4; }
+.pk-node { stroke: var(--pk-surface); stroke-width: 1.5; }
+.pk-node--issue { stroke: var(--pk-ink); stroke-width: 1.5; fill-opacity: 0.55; }
+.pk-faded { opacity: 0.18; }

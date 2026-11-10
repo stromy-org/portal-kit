@@ -17,6 +17,7 @@ import {
   createAnnouncer,
   DataTable,
   Hemicycle,
+  NetworkGraph,
   Quadrant,
   StageLadder,
   StanceMatrix,
@@ -139,6 +140,24 @@ function Visuals() {
         ]}
         selected={pick}
         onSelect={setPick}
+      />
+      <NetworkGraph
+        caption="Demo actor-issue network"
+        selected={pick}
+        onSelect={setPick}
+        nodes={[
+          { id: "a", label: "Demo Operator", kind: "actor", group: "Operators", weight: 5 },
+          { id: "b", label: "Demo Regulator", kind: "actor", group: "Regulators", weight: 3 },
+          { id: "c", label: "Demo Party", kind: "actor", group: "Parties", weight: 2 },
+          { id: "i1", label: "Demo tariffs", kind: "issue", weight: 6 },
+          { id: "i2", label: "Demo connection queue", kind: "issue", weight: 2 },
+        ]}
+        edges={[
+          { source: "a", target: "i1", polarity: "opposed", weight: 5 },
+          { source: "b", target: "i1", polarity: "supportive", weight: 2 },
+          { source: "c", target: "i1", polarity: "mixed", weight: 3 },
+          { source: "a", target: "i2", polarity: "mixed", weight: 1 },
+        ]}
       />
       <StageLadder caption="Where the demo bill stands" steps={["Consultation", "Council advice", "Committee stage", "House vote", "Senate", "In force"]} current={4} />
       <Hemicycle

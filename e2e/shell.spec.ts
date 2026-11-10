@@ -105,7 +105,7 @@ test("the rich visuals pass axe, raise no CSP violation, answer the keyboard and
   const violations = await watchCsp(page);
   await page.goto("/app/eng_demo/2026-10/visuals/");
   await expect(page.getByRole("heading", { level: 1, name: "Visuals" })).toBeVisible();
-  await expect(page.locator("figure.pk-visual")).toHaveCount(5);
+  await expect(page.locator("figure.pk-visual")).toHaveCount(6);
   // Keyboard: Tab to a matrix row and press Enter.
   const actor = page.getByRole("button", { name: "Actor Demo Operator: open details" });
   await actor.focus();
@@ -117,8 +117,8 @@ test("the rich visuals pass axe, raise no CSP violation, answer the keyboard and
   await page.getByRole("button", { name: /Demo decision postponed: open details/ }).click();
   await expect(page.locator("[data-picked]")).toContainText("s1");
   // Every figure has its table fallback, and the hemicycle draws all 110 seats.
-  await expect(page.locator("figure.pk-visual details table")).toHaveCount(5);
-  expect(await page.locator("figure.pk-visual").nth(3).locator("svg[role=img] > circle, svg[role=img] > rect, svg[role=img] > polygon").count()).toBe(110);
+  await expect(page.locator("figure.pk-visual details table")).toHaveCount(6);
+  expect(await page.locator("figure.pk-visual").nth(4).locator("svg[role=img] > circle, svg[role=img] > rect, svg[role=img] > polygon").count()).toBe(110);
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
   // Open every table: still no violation (the tables are real tables).
@@ -126,4 +126,43 @@ test("the rich visuals pass axe, raise no CSP violation, answer the keyboard and
   const again = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
   expect(again.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
   expect(violations).toEqual([]);
+});
+
+test("the network graph zooms, pans, selects and fades under the strict CSP", async ({ page }) => {
+  const violations = await watchCsp(page);
+  await page.goto("/app/eng_demo/2026-10/visuals/");
+  const graph = page.locator("figure.pk-network");
+  await expect(graph).toBeVisible();
+  const zoom = () => graph.locator("svg > g[data-zoom]").getAttribute("data-zoom");
+  const transform = () => graph.locator("svg > g[data-zoom]").getAttribute("transform");
+  expect(await zoom()).toBe("1.00");
+  await graph.getByRole("button", { name: "Zoom in" }).click();
+  expect(Number(await zoom())).toBeGreaterThan(1.3);
+  await graph.getByRole("button", { name: "Reset view" }).click();
+  expect(await zoom()).toBe("1.00");
+  const before = await transform();
+  const svg = graph.locator("svg.pk-network__svg");
+  await svg.focus();
+  await page.keyboard.press("ArrowLeft");
+  expect(await transform()).not.toBe(before);
+  const box = (await svg.boundingBox())!;
+  await page.mouse.move(box.x + 20, box.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 120, box.y + 70);
+  await page.mouse.up();
+  await page.mouse.wheel(0, -300);
+  await expect.poll(async () => Number(await zoom())).toBeGreaterThan(1);
+  // Selecting a node fades the nodes outside its neighbourhood.
+  await graph.getByRole("button", { name: /^Actor Demo Party/ }).click();
+  await expect(graph.getByRole("button", { name: /^Actor Demo Operator/ })).toHaveClass(/pk-faded/);
+  await expect(graph.getByRole("button", { name: /^Issue Demo tariffs/ })).not.toHaveClass(/pk-faded/);
+  expect(violations).toEqual([]);
+});
+
+test("negative control: an inline style IS reported on the visuals page, so the watcher can see a violation", async ({ page }) => {
+  const violations = await watchCsp(page);
+  await page.goto("/app/eng_demo/2026-10/visuals/");
+  await expect(page.locator("figure.pk-network")).toBeVisible();
+  await page.evaluate(() => document.querySelector("figure.pk-network")!.setAttribute("style", "color: red"));
+  await expect.poll(() => violations.length).toBeGreaterThan(0);
 });
