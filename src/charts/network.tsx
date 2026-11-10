@@ -86,8 +86,19 @@ export function layoutGraph(nodes: GraphNode[], edges: GraphEdge[]): Laid[] {
     .force("y", forceY(H / 2).strength(0.06))
     .stop();
   for (let i = 0; i < 300; i++) simulation.tick();
-  // Keep everything inside the frame at rest.
-  return sim.map((n) => ({ id: n.id, r: n.r, x: Math.min(W - 40, Math.max(40, n.x!)), y: Math.min(H - 24, Math.max(24, n.y!)) }));
+  // Fit the settled layout to the frame, so a small graph is not left in a corner.
+  const xs = sim.map((n) => n.x!);
+  const ys = sim.map((n) => n.y!);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const padX = 90;
+  const padY = 40;
+  const k = Math.min(2.2, (W - 2 * padX) / Math.max(1, x1 - x0), (H - 2 * padY) / Math.max(1, y1 - y0));
+  return sim.map((n) => ({
+    id: n.id,
+    r: n.r,
+    x: W / 2 + (n.x! - (x0 + x1) / 2) * k,
+    y: H / 2 + (n.y! - (y0 + y1) / 2) * k,
+  }));
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
