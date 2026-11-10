@@ -192,9 +192,9 @@ export function StanceMatrix(props: StanceMatrixProps) {
         const x = labelW + ci * cellW + cellW / 2;
         const head = (
           <>
-            {headLines[ci]!.map((line, li) => (
+            {headLines[ci]!.map((line, li, all) => (
               <text key={li} class="pk-chart__label" x={x} y={14 + li * 14} text-anchor="middle">
-                {line}
+                {li < all.length - 1 ? `${line} ` : line}
               </text>
             ))}
             {props.selectedCol === c.id ? <rect class="pk-selected" x={x - cellW / 2 + 2} y={0} width={cellW - 4} height={headH - 6} fill="none" rx="4" /> : null}
@@ -632,7 +632,7 @@ export function Swimlanes(props: SwimlanesProps) {
             <text class="pk-chart__label" x={labelW - 14} y={mid} text-anchor="end" dominant-baseline="middle">
               {wrapLabel(lane.label, 26, 2).map((line, i, all) => (
                 <tspan key={i} x={labelW - 14} dy={i === 0 ? (all.length > 1 ? "-0.55em" : "0") : "1.1em"}>
-                  {line}
+                  {i < all.length - 1 ? `${line} ` : line}
                 </tspan>
               ))}
             </text>
