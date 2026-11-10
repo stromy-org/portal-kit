@@ -3,6 +3,13 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.3.1 — 2026-11-10
+
+- Wrapped labels in the stance matrix headers and swimlane names join their lines with a
+  space, so a mark's accessible name contains its visible text (axe
+  `label-content-name-mismatch`, found in the portal's full-rule axe run). The visuals
+  browser test now runs every axe rule, not only the WCAG tags.
+
 ## v0.3.0 — 2026-11-10
 
 - `NetworkGraph`: a navigable actor-issue network / camps graph. CSP spike result: d3-force

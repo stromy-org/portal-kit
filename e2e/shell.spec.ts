@@ -119,7 +119,8 @@ test("the rich visuals pass axe, raise no CSP violation, answer the keyboard and
   // Every figure has its table fallback, and the hemicycle draws all 110 seats.
   await expect(page.locator("figure.pk-visual details table")).toHaveCount(6);
   expect(await page.locator("figure.pk-visual").nth(4).locator("svg[role=img] > circle, svg[role=img] > rect, svg[role=img] > polygon").count()).toBe(110);
-  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+  // Every axe rule, not only the WCAG tags: a mark's name must contain its visible text.
+  const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
   // Open every table: still no violation (the tables are real tables).
   await page.locator("details > summary").evaluateAll((els) => els.forEach((e) => (e.parentElement as HTMLDetailsElement).open = true));
