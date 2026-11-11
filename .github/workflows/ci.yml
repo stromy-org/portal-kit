@@ -37,12 +37,14 @@ jobs:
           cache-dependency-path: package-lock.json
       - name: Install (lockfile enforced, no install scripts)
         run: npm ci --ignore-scripts
+        timeout-minutes: 10
       - name: Typecheck
         run: npm run typecheck
       - name: Unit and component tests
         run: npm test
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+        timeout-minutes: 15
       - name: Browser tests (Chromium)
         run: npm run e2e
 
@@ -58,8 +60,10 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci --ignore-scripts
+        timeout-minutes: 10
       - name: Install Firefox and WebKit
         run: npx playwright install --with-deps firefox webkit
+        timeout-minutes: 15
       - name: Browser tests (Firefox, WebKit)
         env:
           PK_BROWSERS: all
@@ -94,6 +98,7 @@ jobs:
           cache-dependency-path: package-lock.json
       - if: steps.paths.outputs.run == 'true'
         run: npm ci --ignore-scripts && npx playwright install --with-deps firefox webkit
+        timeout-minutes: 15
       - if: steps.paths.outputs.run == 'true'
         env:
           PK_BROWSERS: all
