@@ -50,7 +50,7 @@ PK_BROWSERS=all npm run e2e   # Chromium, Firefox and WebKit
 | `src/router` | URL codec and the page-change contract (scroll reset, focus, restore on back) |
 | `src/state` | `PanelFrame`, `usePanel` and the state model: numbers only in `ready` |
 | `src/ui` | DataTable, Pagination, Drawer (native dialog), the announcer |
-| `src/charts` | Hand-rolled SVG bar and line charts, each with a text summary and data table |
+| `src/charts` | Hand-rolled SVG charts and visuals, each with a text summary and data table; `interact.tsx` is the shared interaction layer (mark cards, legend toggles, d3-zoom, d3-brush) every chart uses |
 | `src/theme` | Token validation, the contrast guard, `setProperty` application |
 | `src/testkit` | Fake gatekeeper, `scanDist`, `strictCspProblems` (Node only) |
 | `src/styles/kit.css` | Base tokens and component classes |

@@ -1,3 +1,6 @@
 .demo-spacer {
   height: 2400px;
 }
+
+/* The brush negative control: a brush that cannot receive the pointer. */
+.demo-broken-brush .pk-brush, .demo-broken-brush .pk-brush * { pointer-events: none; }

@@ -16,7 +16,9 @@ import {
   byRows,
   createAnnouncer,
   DataTable,
+  type DateRange,
   Hemicycle,
+  LineChart,
   NetworkGraph,
   Quadrant,
   StageLadder,
@@ -29,6 +31,7 @@ import {
   type Route,
   Router,
   safeTheme,
+  Sparkline,
   type Theme,
   usePanel,
 } from "../src/index.ts";
@@ -183,6 +186,58 @@ function Visuals() {
   );
 }
 
+/** The interaction layer (ORG-PLAN-605 KIT): cards, toggles, zoom, brush, sparkline. */
+function Interaction() {
+  const [range, setRange] = useState<DateRange | null>(null);
+  const broken = new URLSearchParams(location.search).get("broken");
+  const weeks = ["2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19", "2026-10-26"];
+  return (
+    <div class={broken === "brush" ? "demo-broken-brush" : undefined}>
+      <h1>Interaction</h1>
+      <p role="status" data-range-picked>
+        {range ? `Picked ${range.from} to ${range.to}` : "No range picked"}
+      </p>
+      <BarChart
+        caption="Share of statements by theme"
+        format={(v) => `${v}%`}
+        unit="share of statements"
+        denominator="all statements on the demo brief"
+        seriesNames={["Themes", "Small themes"]}
+        data={[
+          { label: "Grid capacity", value: 42, n: 21, series: 0 },
+          { label: "Prices", value: 31, n: 15, series: 0, caveat: "One outlet only." },
+          { label: "Permits", value: 27, n: 13, series: 1 },
+          { label: "Demo niche", value: 88, n: 3, series: 1, suppressed: "fewer than 10 statements" },
+        ]}
+      />
+      <LineChart
+        caption="Documents per week"
+        unit="documents"
+        denominator={null}
+        zoomable
+        brushable
+        onRange={setRange}
+        series={[
+          { name: "Grid", points: weeks.map((at, i) => ({ at, value: [3, 5, 4, 8, 6, 9, 7, 10][i]!, n: [3, 5, 4, 8, 6, 9, 7, 10][i]! })) },
+          { name: "Prices", points: weeks.map((at, i) => ({ at, value: [1, 2, 2, 3, 5, 4, 6, 5][i]! })) },
+        ]}
+      />
+      <p>
+        Documents this period <Sparkline label="Documents per week" unit="documents" points={weeks.map((at, i) => ({ at, value: [4, 7, 6, 11, 11, 13, 13, 15][i]! }))} />
+      </p>
+      <Swimlanes
+        caption="Demo story timeline"
+        zoomable
+        lanes={[
+          { id: "s1", label: "Demo decision postponed", events: [{ id: "e1", at: "2026-10-14", size: 3 }, { id: "e2", at: "2026-10-15", size: 1 }, { id: "e3", at: "2026-10-16", kind: "event", label: "Vote" }] },
+          { id: "s2", label: "Demo connection queue grows", events: [{ id: "e4", at: "2026-10-12", size: 2 }, { id: "e5", at: "2026-10-20", size: 4 }] },
+        ]}
+      />
+      <div class="demo-spacer" aria-hidden="true" />
+    </div>
+  );
+}
+
 function App() {
   const [route, setRoute] = useState<Route>({ params: {} });
   const [nav, setNav] = useState<Nav | null>(null);
@@ -216,6 +271,9 @@ function App() {
               </a>{" "}
               <a href={router.href({ ...route, view: "visuals", params: {} })} onClick={(e) => (e.preventDefault(), go({ ...route, view: "visuals", params: {} }))}>
                 Visuals
+              </a>{" "}
+              <a href={router.href({ ...route, view: "interaction", params: {} })} onClick={(e) => (e.preventDefault(), go({ ...route, view: "interaction", params: {} }))}>
+                Interaction
               </a>
             </>
           )}
@@ -230,6 +288,7 @@ function App() {
           <Evidence route={{ ...route, engagement: route.engagement, period: route.period }} onSettled={settled("Evidence")} go={go} />
         )}
         {route.engagement && route.period && route.view === "visuals" && <VisualsPage onSettled={settled("Visuals")} />}
+        {route.engagement && route.period && route.view === "interaction" && <InteractionPage onSettled={settled("Interaction")} />}
       </main>
     </>
   );
@@ -238,6 +297,11 @@ function App() {
 function VisualsPage({ onSettled }: { onSettled: () => void }) {
   useEffect(onSettled, []);
   return <Visuals />;
+}
+
+function InteractionPage({ onSettled }: { onSettled: () => void }) {
+  useEffect(onSettled, []);
+  return <Interaction />;
 }
 
 const root = document.getElementById("app");
