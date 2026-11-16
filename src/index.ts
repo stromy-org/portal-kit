@@ -9,5 +9,6 @@ export * from "./theme/index.ts";
 export * from "./ui/index.tsx";
 export * from "./charts/index.tsx";
 export * from "./charts/visuals.tsx";
+export * from "./charts/interact.tsx";
 export { hemicycleSeats, overlaps, placeLabels, textWidth, wrapLabel } from "./charts/layout.ts";
 export * from "./charts/network.tsx";

@@ -258,3 +258,77 @@ path.pk-line[class*="pk-series-"] { fill: none; }
 .pk-node--issue { stroke: var(--pk-ink); stroke-width: 1.5; fill-opacity: 0.55; }
 .pk-faded { opacity: 0.18; }
 .pk-network .pk-chart__label { paint-order: stroke; stroke: var(--pk-surface); stroke-width: 3px; stroke-linejoin: round; }
+
+/* Interaction layer (ORG-PLAN-605 KIT): mark cards, legend toggles, zoom, brush, sparklines. */
+.pk-plot { position: relative; }
+.pk-plot:focus-visible { outline: 3px solid var(--pk-accent); outline-offset: 2px; }
+.pk-tip {
+  position: absolute;
+  left: var(--pk-tip-x, 50%);
+  top: var(--pk-tip-y, 0);
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 11rem;
+  max-width: 18rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--pk-rule);
+  border-radius: 6px;
+  background: var(--pk-surface);
+  color: var(--pk-ink);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--pk-ink) 18%, transparent);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+.pk-tip--off {
+  /* Stays in the tree as a live region, out of sight. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  box-shadow: none;
+}
+.pk-tip--below { transform: translate(-50%, 12px); }
+.pk-tip--start { transform: translate(-12px, calc(-100% - 8px)); }
+.pk-tip--end { transform: translate(calc(-100% + 12px), calc(-100% - 8px)); }
+.pk-tip--below.pk-tip--start { transform: translate(-12px, 12px); }
+.pk-tip--below.pk-tip--end { transform: translate(calc(-100% + 12px), 12px); }
+.pk-tip__title { font-weight: 700; }
+.pk-tip__line { color: var(--pk-ink); }
+.pk-mark .pk-hit__area { fill: transparent; }
+.pk-mark:hover .pk-hit__area, .pk-mark--on .pk-hit__area { fill: var(--pk-rule); }
+.pk-point { stroke: var(--pk-surface); stroke-width: 2; }
+.pk-range { fill: var(--pk-accent); fill-opacity: 0.14; stroke: var(--pk-accent); stroke-width: 1; }
+.pk-brush .selection { fill: var(--pk-accent); fill-opacity: 0.2; stroke: var(--pk-accent); }
+.pk-chart__zoomable { touch-action: pan-y; }
+.pk-chart__tools { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+.pk-chart__hint { color: var(--pk-muted); font-size: 0.85rem; }
+.pk-chart svg text.pk-chart__value--withheld { fill: var(--pk-muted); font-style: italic; }
+.pk-legend--toggles { gap: 0.25rem 0.5rem; }
+.pk-legend__toggle {
+  min-height: 24px;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--pk-rule);
+  border-radius: 4px;
+  background: var(--pk-surface);
+  color: var(--pk-ink);
+  font: inherit;
+  cursor: pointer;
+}
+.pk-legend__toggle[aria-pressed="false"] { color: var(--pk-muted); text-decoration: line-through; }
+.pk-legend__toggle[aria-pressed="false"] svg { opacity: 0.35; }
+.pk-range-controls { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; border: 1px solid var(--pk-rule); border-radius: 6px; margin: 0.5rem 0; padding: 0.4rem 0.75rem; }
+.pk-range-controls legend { font-size: 0.9rem; font-weight: 600; padding: 0 0.25rem; }
+.pk-spark { display: inline-block; vertical-align: middle; }
+.pk-spark__line { stroke: var(--pk-primary); stroke-width: 1.5; }
+.pk-spark__last { fill: var(--pk-primary); }
+
+@media print {
+  .pk-tip, .pk-chart__tools, .pk-range-controls { display: none; }
+}

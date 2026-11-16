@@ -17,10 +17,12 @@
  */
 
 import { scaleLinear, scaleTime } from "d3-scale";
-import type { ComponentChildren } from "preact";
+import type { ComponentChildren, Ref } from "preact";
+import { useId, useRef } from "preact/hooks";
 
 import type { Column } from "../contract/index.ts";
 import { DataTable } from "../ui/index.tsx";
+import { type MarkDetail, type Marks, markHandlers, Plot, useMarks, useZoomX, ZoomTools } from "./interact.tsx";
 import { hemicycleSeats, type LabelItem, placeLabels, wrapLabel } from "./layout.ts";
 
 type Polarity = "supportive" | "opposed" | "mixed";
@@ -33,19 +35,47 @@ function Frame(props: {
   children: ComponentChildren;
   table: { columns: Column[]; rows: Array<Record<string, unknown>>; labels?: Record<string, string> };
   legend?: ComponentChildren;
+  /** The mark card: which mark is active and what it says. */
+  card?: { marks: Marks; detail: MarkDetail | null; at?: { x: number; y: number } };
+  tools?: ComponentChildren;
+  svgRef?: Ref<SVGSVGElement>;
+  onKey?: (e: KeyboardEvent) => boolean;
+  zoom?: number;
 }) {
+  const [, , w, h] = props.viewBox.split(" ").map(Number);
+  const svg = (
+    <svg
+      ref={props.svgRef}
+      role={props.interactive ? "group" : "img"}
+      aria-label={`${props.caption}. ${props.summary}`}
+      viewBox={props.viewBox}
+      width="100%"
+      preserveAspectRatio="xMinYMin meet"
+      class={props.zoom !== undefined ? "pk-chart__zoomable" : undefined}
+      data-zoom={props.zoom?.toFixed(2)}
+    >
+      {props.children}
+    </svg>
+  );
   return (
     <figure class="pk-chart pk-visual">
       <figcaption>{props.caption}</figcaption>
-      <svg
-        role={props.interactive ? "group" : "img"}
-        aria-label={`${props.caption}. ${props.summary}`}
-        viewBox={props.viewBox}
-        width="100%"
-        preserveAspectRatio="xMinYMin meet"
-      >
-        {props.children}
-      </svg>
+      {props.tools}
+      {props.card ? (
+        <Plot
+          label={`Values of ${props.caption}`}
+          marks={props.card.marks}
+          detail={props.card.detail}
+          at={props.card.at}
+          box={{ w: w ?? 1, h: h ?? 1 }}
+          focusable={!props.interactive}
+          onKey={props.onKey}
+        >
+          {svg}
+        </Plot>
+      ) : (
+        svg
+      )}
       {props.legend}
       <p class="pk-visually-hidden">{props.summary}</p>
       <details class="pk-chart__data">
@@ -57,9 +87,17 @@ function Frame(props: {
 }
 
 /** A keyboard-reachable SVG button. */
-function Hit(props: { label: string; onActivate: () => void; pressed?: boolean; children: ComponentChildren; class?: string }) {
+function Hit(props: {
+  label: string;
+  onActivate: () => void;
+  pressed?: boolean;
+  children: ComponentChildren;
+  class?: string;
+  handlers?: ReturnType<typeof markHandlers>;
+}) {
   return (
     <g
+      {...props.handlers}
       role="button"
       tabindex={0}
       aria-label={props.label}
@@ -127,6 +165,8 @@ export interface StanceMatrixProps {
   onRow?: (id: string) => void;
   onCol?: (id: string) => void;
   onCell?: (row: string, col: string) => void;
+  /** What a cell's count is out of, for the card; null when it does not apply. */
+  denominator?: string | null;
 }
 
 /** The stance a cell shows: for, against, or mixed when the sides are close or only mixed. */
@@ -167,6 +207,16 @@ export function StanceMatrix(props: StanceMatrixProps) {
   const rowLabel = (id: string) => rows.find((r) => r.id === id)?.label ?? id;
   const colLabel = (id: string) => props.cols.find((c) => c.id === id)?.label ?? id;
   const summary = `${plural(props.cells.length, "position")} from ${plural(rows.length, "actor")} on ${plural(props.cols.length, "issue")}. Blue with a plus is for, orange with a minus is against, grey with a plus-minus is mixed; a bigger dot means more statements.`;
+  // The cards follow the drawn order: row by row, then column by column.
+  const order = laid.flatMap(({ row, top }) =>
+    props.cols.flatMap((c, ci) => {
+      const cell = byKey.get(`${row.id}\u0000${c.id}`);
+      return cell ? [{ cell, row, c, cx: labelW + ci * cellW + cellW / 2, cy: top + rowH / 2 }] : [];
+    }),
+  );
+  const marks = useMarks(order.length);
+  const on = marks.active === null ? null : order[marks.active]!;
+  const index = new Map(order.map((o, i) => [`${o.row.id}\u0000${o.c.id}`, i]));
   return (
     <Frame
       caption={props.caption}
@@ -174,6 +224,19 @@ export function StanceMatrix(props: StanceMatrixProps) {
       interactive={interactive}
       viewBox={`0 0 ${width} ${height}`}
       legend={<Legend items={STANCE_LEGEND} />}
+      card={{
+        marks,
+        detail: on
+          ? {
+              label: `${on.row.label} on ${on.c.label}`,
+              value: `${POLARITY_WORD[stanceOf(on.cell)]}: ${on.cell.supportive ?? 0} for, ${on.cell.opposed ?? 0} against, ${on.cell.mixed ?? 0} mixed${on.cell.latest ? `; latest ${on.cell.latest}` : ""}`,
+              n: on.cell.n,
+              unit: "statements",
+              denominator: props.denominator ?? null,
+            }
+          : null,
+        at: on ? { x: on.cx, y: on.cy - 12 } : undefined,
+      }}
       table={{
         columns: ["actor", "issue", "for", "against", "mixed", "statements", "latest"].map(col),
         labels: { actor: "Actor", issue: "Issue", for: "For", against: "Against", mixed: "Mixed", statements: "Statements", latest: "Latest" },
@@ -247,13 +310,13 @@ export function StanceMatrix(props: StanceMatrixProps) {
               </>
             );
             const name = `${row.label} on ${c.label}: ${POLARITY_WORD[polarity]}, ${plural(cell.n, "statement")}`;
+            const handlers = markHandlers(index.get(`${row.id}\u0000${c.id}`) ?? 0, marks);
             return props.onCell ? (
-              <Hit key={c.id} label={name} onActivate={() => props.onCell?.(row.id, c.id)}>
+              <Hit key={c.id} label={name} onActivate={() => props.onCell?.(row.id, c.id)} handlers={handlers}>
                 {mark}
               </Hit>
             ) : (
-              <g key={c.id}>
-                <title>{name}</title>
+              <g key={c.id} class="pk-mark" {...handlers}>
                 {mark}
               </g>
             );
@@ -283,6 +346,8 @@ export interface QuadrantProps {
   selected?: string;
   onSelect?: (id: string) => void;
   groups?: string[];
+  /** What the voice share is out of, for the card; null when it does not apply. */
+  denominator?: string | null;
 }
 
 export function Quadrant(props: QuadrantProps) {
@@ -306,12 +371,27 @@ export function Quadrant(props: QuadrantProps) {
   const side = (p: QuadrantPoint) => ((p.alignment ?? 0) > 0.05 ? "for" : (p.alignment ?? 0) < -0.05 ? "against" : "neutral");
   const summary = `${plural(plotted.length, "actor")} placed by how much voice they have and which way they lean${unplotted.length ? `; ${plural(unplotted.length, "entry", "entries")} with no stance is listed in the table only` : ""}. This measures voice, not influence.`;
   const y0 = y.domain()[1]!;
+  const marks = useMarks(plotted.length);
+  const on = marks.active === null ? null : plotted[marks.active]!;
   return (
     <Frame
       caption={props.caption}
       summary={summary}
       interactive={Boolean(props.onSelect)}
       viewBox={`0 0 ${width} ${height}`}
+      card={{
+        marks,
+        detail: on
+          ? {
+              label: on.label,
+              value: `${Math.round(on.voice * 100)}% of the voice; alignment ${on.alignment!.toFixed(2)} (${side(on)})`,
+              n: on.n ?? null,
+              unit: "share of the voice",
+              denominator: props.denominator ?? null,
+            }
+          : null,
+        at: on ? { x: x(on.alignment!), y: y(on.voice) - radius(on) } : undefined,
+      }}
       table={{
         columns: ["actor", "group", "alignment", "voice", "statements"].map(col),
         labels: { actor: "Actor", group: "Group", alignment: "Alignment (-1 to +1)", voice: "Voice", statements: "Statements" },
@@ -377,12 +457,11 @@ export function Quadrant(props: QuadrantProps) {
           </>
         );
         return props.onSelect ? (
-          <Hit key={p.id} label={name} pressed={props.selected === p.id} onActivate={() => props.onSelect?.(p.id)}>
+          <Hit key={p.id} label={name} pressed={props.selected === p.id} onActivate={() => props.onSelect?.(p.id)} handlers={markHandlers(i, marks)}>
             {mark}
           </Hit>
         ) : (
-          <g key={p.id}>
-            <title>{name}</title>
+          <g key={p.id} class="pk-mark" {...markHandlers(i, marks)}>
             {mark}
           </g>
         );
@@ -571,6 +650,8 @@ export interface SwimlanesProps {
   selected?: string;
   onLane?: (id: string) => void;
   onEvent?: (lane: string, event: string) => void;
+  /** Zoom and pan the time axis (a local view). */
+  zoomable?: boolean;
 }
 
 const DAY = 86_400_000;
@@ -584,13 +665,22 @@ export function Swimlanes(props: SwimlanesProps) {
   const lo = dates.length ? Math.min(...dates) : Date.now();
   const hi = dates.length ? Math.max(...dates) : Date.now();
   const span = Math.max(hi - lo, 2 * DAY);
-  const x = scaleTime()
-    .domain([new Date(lo - span * 0.06), new Date(hi + span * 0.06)])
-    .range([labelW + 8, width - 16]);
   const maxSize = Math.max(1, ...props.lanes.flatMap((l) => l.events.map((e) => e.size ?? 1)));
   const height = props.lanes.length * laneH + axisH + 6;
+  const svg = useRef<SVGSVGElement>(null);
+  const clip = useId();
+  const zoom = useZoomX(svg, { enabled: Boolean(props.zoomable), extent: [[labelW + 8, 0], [width - 16, height]], pan: true });
+  const x = zoom.t.rescaleX(
+    scaleTime()
+      .domain([new Date(lo - span * 0.06), new Date(hi + span * 0.06)])
+      .range([labelW + 8, width - 16]),
+  );
+  const order = props.lanes.flatMap((lane, li) => lane.events.map((e) => ({ lane, e, li })));
+  const marks = useMarks(order.length);
+  const on = marks.active === null ? null : order[marks.active]!;
+  const pos = new Map(order.map((o, i) => [`${o.lane.id}\u0000${o.e.id}`, i]));
   const fmt = (d: Date) => d.toISOString().slice(5, 10);
-  const ticks = x.ticks(Math.min(6, Math.max(2, Math.round(span / DAY / 2))));
+  const ticks = x.ticks(Math.min(6, Math.max(2, Math.round(span / DAY / 2 / zoom.t.k) + 1)));
   const summary = `${plural(props.lanes.length, "story", "stories")} over ${Math.max(1, Math.round((hi - lo) / DAY) + 1)} days. Dots are days of coverage, sized by documents; diamonds above the line are events such as votes or postponements.`;
   const kindOf = (e: LaneEvent) => (e.kind === "event" ? "event" : "coverage");
   return (
@@ -599,6 +689,23 @@ export function Swimlanes(props: SwimlanesProps) {
       summary={summary}
       interactive={Boolean(props.onLane || props.onEvent)}
       viewBox={`0 0 ${width} ${height}`}
+      svgRef={svg}
+      zoom={props.zoomable ? zoom.t.k : undefined}
+      onKey={zoom.onKey}
+      tools={props.zoomable ? <ZoomTools zoom={zoom} label={props.caption} /> : undefined}
+      card={{
+        marks,
+        detail: on
+          ? {
+              label: `${on.lane.label}, ${on.e.at}`,
+              value: on.e.kind === "event" ? `event: ${on.e.label ?? "unnamed"}` : `${plural(on.e.size ?? 1, "document")} of coverage${on.e.label ? `; ${on.e.label}` : ""}`,
+              n: on.e.size ?? null,
+              unit: "documents",
+              denominator: null,
+            }
+          : null,
+        at: on ? { x: x(new Date(on.e.at)), y: on.li * laneH + laneH / 2 - 14 } : undefined,
+      }}
       legend={
         <ul class="pk-legend" aria-label="Legend">
           <li>
@@ -623,6 +730,11 @@ export function Swimlanes(props: SwimlanesProps) {
         ),
       }}
     >
+      <defs>
+        <clipPath id={`${clip}-lanes`}>
+          <rect x={labelW} y={0} width={width - labelW} height={height} />
+        </clipPath>
+      </defs>
       {props.lanes.map((lane, li) => {
         const top = li * laneH;
         const mid = top + laneH / 2;
@@ -649,6 +761,7 @@ export function Swimlanes(props: SwimlanesProps) {
             ) : (
               head
             )}
+            <g clip-path={`url(#${clip}-lanes)`}>
             {lane.events.map((e) => {
               const cx = x(new Date(e.at));
               const r = 5 + Math.sqrt((e.size ?? 1) / maxSize) * 7;
@@ -659,22 +772,23 @@ export function Swimlanes(props: SwimlanesProps) {
               ) : (
                 <circle class="pk-series-0 pk-bubble" cx={cx} cy={mid} r={r} />
               );
+              const handlers = markHandlers(pos.get(`${lane.id}\u0000${e.id}`) ?? 0, marks);
               return props.onEvent ? (
-                <Hit key={e.id} label={name} onActivate={() => props.onEvent?.(lane.id, e.id)}>
+                <Hit key={e.id} label={name} onActivate={() => props.onEvent?.(lane.id, e.id)} handlers={handlers}>
                   {mark}
                 </Hit>
               ) : (
-                <g key={e.id}>
-                  <title>{name}</title>
+                <g key={e.id} class="pk-mark" {...handlers}>
                   {mark}
                 </g>
               );
             })}
+            </g>
           </g>
         );
       })}
       <line class="pk-zero" x1={labelW} x2={width - 8} y1={props.lanes.length * laneH + 2} y2={props.lanes.length * laneH + 2} />
-      {ticks.map((t) => (
+      {ticks.filter((t) => x(t) >= labelW && x(t) <= width - 8).map((t) => (
         <text key={t.getTime()} class="pk-chart__axis" x={x(t)} y={props.lanes.length * laneH + 20} text-anchor="middle">
           {fmt(t)}
         </text>

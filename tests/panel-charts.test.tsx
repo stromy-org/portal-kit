@@ -132,7 +132,7 @@ describe("primitives", () => {
     const svg = bars.container.querySelector("svg");
     expect(svg?.getAttribute("role")).toBe("img");
     expect(svg?.getAttribute("aria-label")).toContain("highest is B at 60%");
-    expect(bars.container.querySelectorAll("rect")).toHaveLength(2);
+    expect(bars.container.querySelectorAll("rect[class*=pk-series-]")).toHaveLength(2);
     expect(bars.container.querySelector("details table")).not.toBeNull();
     const line = render(
       <LineChart

@@ -3,6 +3,36 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.4.0 — 2026-11-17
+
+The interaction layer (ORG-PLAN-605 KIT), one shared module (`interact.tsx`) every chart uses:
+
+- **Mark cards** on `BarChart`, `LineChart`, `Sparkline`, `StanceMatrix`, `Quadrant` and
+  `Swimlanes`: value, count, unit and denominator, each given or explicitly "not
+  applicable", plus a caveat. They open on hover, a touch tap and keyboard focus (the plot
+  is a tab stop; arrows, Home and End step, Escape closes) and are a polite live region. The
+  card is placed inside the figure (below the mark near the top, anchored inward at an
+  edge) through custom properties set with `style.setProperty`. A `suppressed` figure
+  (`BarDatum.suppressed`, `SeriesPoint.suppressed`) appears nowhere: not on the bar, in the
+  summary, the card or the table. The native SVG `<title>` tooltips on non-interactive
+  marks are replaced by the card.
+- **Legend toggles** (`SeriesLegend`, `useToggles`): pressed buttons; `LineChart` shows them
+  for two or more series, `BarChart` when `seriesNames` is given. A hidden series stays in
+  the table, and the summary says how many are hidden.
+- **Zoom and brush** with d3-zoom and d3-brush (new dependencies `d3-zoom`, `d3-brush`,
+  `d3-selection`): `LineChart zoomable brushable onRange` and `Swimlanes zoomable`. Zoom is a
+  local view (buttons, + / − / 0, shift-arrows, ctrl- or cmd-wheel, pinch); a plain wheel
+  scrolls the page. The brush snaps to the chart's dates (`snapRange`) and is reported
+  through `onRange`, never applied; native range inputs select the same range from the
+  keyboard; "Zoom to range" fits it. Every d3 listener is removed on rerender and unmount.
+- **`Sparkline`** for tiles: a labelled image (`sparkSummary`) with a card per period.
+- `BarChart` table: the label column has a heading (`labelHeading`, default "Item") and a
+  "Count" column when any datum has `n`.
+- Browser tests (`e2e/interaction.spec.ts`) under the strict CSP: cards (hover, keyboard,
+  touch), toggles, pointer and keyboard brushing, zoom, plain-wheel scroll, axe with every
+  rule; negative controls: an inline style and a string-compiled timer are reported, and a
+  brush that cannot take the pointer fails the brush assertion.
+
 ## v0.3.2 — 2026-11-10
 
 - `NetworkGraph` fits the settled layout to its frame (a small graph no longer sits in a
