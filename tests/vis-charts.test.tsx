@@ -92,3 +92,47 @@ describe("Quadrant with its own measures", () => {
     expect(container.textContent).toContain("Alignment with the engagement's position");
   });
 });
+
+describe("Quadrant labels", () => {
+  it("never places a point's label over a corner word (the attention-against-tone overlap)", async () => {
+    const { textWidth } = await import("../src/index.ts");
+    // A point high on the right, where "Much attention, positive" / "Loud allies" is written.
+    const { container } = render(<Quadrant caption="Voice" points={[{ id: "a", label: "Eastline Power", alignment: 0.6, voice: 1, n: 30 }]} />);
+    const labels = [...container.querySelectorAll("text.pk-chart__label")];
+    const corner = [...container.querySelectorAll("text.pk-chart__axis")].find((t) => t.textContent === "Loud allies")!;
+    const cx = Number(corner.getAttribute("x"));
+    const cw = textWidth("Loud allies", 12);
+    const cy = Number(corner.getAttribute("y"));
+    for (const l of labels) {
+      const x = Number(l.getAttribute("x"));
+      const y = Number(l.getAttribute("y"));
+      const lw = textWidth(l.textContent ?? "", 12);
+      const anchor = l.getAttribute("text-anchor") ?? "start";
+      const left = anchor === "end" ? x - lw : anchor === "middle" ? x - lw / 2 : x;
+      const overlapX = left < cx && left + lw > cx - cw;
+      const overlapY = Math.abs(y - cy) < 14;
+      expect(overlapX && overlapY, `label "${l.textContent}" over the corner word`).toBe(false);
+    }
+  });
+});
+
+describe("BarChart value labels", () => {
+  it("keep clear of the right edge and of the row names (the movers chart)", async () => {
+    const { textWidth } = await import("../src/index.ts");
+    const fmtPts = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)} pts`;
+    const data = [
+      { label: "Eastline Power", value: 50 },
+      { label: "Northwind Grid", value: 0 },
+      { label: "Westvale Energy", value: -50 },
+    ];
+    const { container } = render(<BarChart caption="Change" data={data} format={fmtPts} />);
+    const width = 640;
+    const labelWidth = Math.min(220, Math.round(width * 0.34));
+    for (const t of container.querySelectorAll("text.pk-chart__value")) {
+      const x = Number(t.getAttribute("x"));
+      const w = textWidth(t.textContent ?? "", 12);
+      if (t.getAttribute("text-anchor") === "end") expect(x - w, t.textContent!).toBeGreaterThanOrEqual(labelWidth);
+      else expect(x + w, t.textContent!).toBeLessThanOrEqual(width);
+    }
+  });
+});

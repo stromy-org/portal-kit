@@ -23,7 +23,7 @@ import { useId, useRef } from "preact/hooks";
 import type { Column } from "../contract/index.ts";
 import { DataTable } from "../ui/index.tsx";
 import { type MarkDetail, type Marks, markHandlers, Plot, useMarks, useZoomX, ZoomTools } from "./interact.tsx";
-import { followsInApp, hemicycleSeats, type LabelItem, placeLabels, wrapLabel } from "./layout.ts";
+import { type Box, followsInApp, hemicycleSeats, type LabelItem, placeLabels, textWidth, wrapLabel } from "./layout.ts";
 
 type Polarity = "supportive" | "opposed" | "mixed";
 
@@ -444,9 +444,22 @@ export function Quadrant(props: QuadrantProps) {
   const groups = props.groups ?? [...new Set(plotted.map((p) => p.group ?? ""))];
   const maxN = Math.max(1, ...plotted.map((p) => p.n ?? 1));
   const radius = (p: QuadrantPoint) => 6 + Math.sqrt((p.n ?? 1) / maxN) * 10;
+  // The four corner words are drawn first; a point's label never lands on one.
+  const corner = (text: string, x0: number, base: number, end: boolean): Box => {
+    const tw = textWidth(text, 12);
+    return { x: end ? x0 - tw : x0, y: base - 12, w: tw, h: 15 };
+  };
+  const corners: Box[] = [
+    corner(w.corners[0], pad.left + 4, pad.top + 12, false),
+    corner(w.corners[1], width - pad.right - 4, pad.top + 12, true),
+    corner(w.corners[2], pad.left + 4, height - pad.bottom - 6, false),
+    corner(w.corners[3], width - pad.right - 4, height - pad.bottom - 6, true),
+  ];
   const placed = placeLabels(
     plotted.map((p): LabelItem => ({ id: p.id, x: x(p.alignment!), y: y(p.voice), r: radius(p), text: p.label, priority: p.voice })),
     { w: width, h: height - pad.bottom + 8 },
+    12,
+    corners,
   );
   const near = 0.025 * (hi - lo);
   const side = (p: QuadrantPoint) => ((p.alignment ?? 0) > near ? w.sides[2] : (p.alignment ?? 0) < -near ? w.sides[0] : w.sides[1]);

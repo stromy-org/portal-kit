@@ -69,9 +69,10 @@ export interface Placed {
  * the frame. A label that fits nowhere is not drawn (the data table and the mark's own
  * accessible name still carry it), so no two labels ever overlap.
  */
-export function placeLabels(items: LabelItem[], frame: { w: number; h: number }, size = 12): Placed[] {
+export function placeLabels(items: LabelItem[], frame: { w: number; h: number }, size = 12, obstacles: Box[] = []): Placed[] {
   const marks: Box[] = items.map((i) => ({ x: i.x - i.r, y: i.y - i.r, w: i.r * 2, h: i.r * 2 }));
-  const taken: Box[] = [];
+  // Fixed text already drawn (a chart's corner and axis words): no label is placed over it.
+  const taken: Box[] = [...obstacles];
   const order = [...items].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
   const out = new Map<string, Placed>();
   for (const item of order) {
