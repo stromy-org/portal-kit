@@ -127,6 +127,40 @@ describe("components", () => {
     expect(getByRole("button", { name: "Actor Northwind Grid: open details" }).getAttribute("aria-pressed")).toBe("true");
   });
 
+  it("with an href, a mark is a link to that page; a plain click stays in the app, a modified one is the browser's", () => {
+    const onRow = vi.fn();
+    const onCol = vi.fn();
+    const { container, getByRole } = render(
+      <StanceMatrix {...matrix} onRow={onRow} onCol={onCol} rowHref={(id) => `/app/e/p/actor/?id=${id}`} colHref={(id) => `/app/e/p/issue/?id=${id}`} selectedRow="a" />,
+    );
+    const actor = getByRole("link", { name: "Actor Party A: open its page" });
+    expect(actor.getAttribute("href")).toBe("/app/e/p/actor/?id=b");
+    expect(getByRole("link", { name: "Issue Connection queue: open its page" }).getAttribute("href")).toBe("/app/e/p/issue/?id=i2");
+    expect(getByRole("link", { name: "Actor Northwind Grid: open its page" }).getAttribute("aria-current")).toBe("true");
+    expect(container.querySelectorAll("a[href] [role=button], [role=button] a[href]")).toHaveLength(0);
+    // A plain click navigates in the app; a ctrl/cmd/middle click is left to the browser (a new tab).
+    expect(fireEvent.click(actor)).toBe(false);
+    expect(onRow).toHaveBeenCalledWith("b");
+    onRow.mockClear();
+    expect(fireEvent.click(actor, { ctrlKey: true })).toBe(true);
+    expect(fireEvent.click(actor, { metaKey: true })).toBe(true);
+    expect(fireEvent.click(actor, { button: 1 })).toBe(true);
+    expect(onRow).not.toHaveBeenCalled();
+  });
+
+  it("the quadrant and the swimlanes link their marks when given an href", () => {
+    const onSelect = vi.fn();
+    const q = render(<Quadrant caption="Voice" points={[{ id: "a", label: "A", alignment: 0.5, voice: 0.3 }]} onSelect={onSelect} href={(id) => `/x/actor/?id=${id}`} />);
+    expect(q.container.querySelector("a.pk-hit")!.getAttribute("href")).toBe("/x/actor/?id=a");
+    q.unmount();
+    const onLane = vi.fn();
+    const { getByRole } = render(
+      <Swimlanes caption="Stories" lanes={[{ id: "s", label: "Tariff decision", events: [{ id: "e", at: "2026-10-14", size: 2 }] }]} onLane={onLane} laneHref={(id) => `/x/story/?id=${id}`} />,
+    );
+    fireEvent.click(getByRole("link", { name: "Story Tariff decision: open its page" }));
+    expect(onLane).toHaveBeenCalledWith("s");
+  });
+
   it("draws zero lines on the quadrant and names them", () => {
     const { container } = render(<Quadrant caption="Voice" points={[{ id: "a", label: "A", alignment: 0.5, voice: 0.3 }]} />);
     expect(container.querySelectorAll("line.pk-zero").length).toBeGreaterThanOrEqual(2);

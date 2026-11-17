@@ -22,7 +22,7 @@ import { useMemo, useRef, useState } from "preact/hooks";
 
 import type { Column } from "../contract/index.ts";
 import { DataTable } from "../ui/index.tsx";
-import { type LabelItem, placeLabels } from "./layout.ts";
+import { followsInApp, type LabelItem, placeLabels } from "./layout.ts";
 
 export interface GraphNode {
   id: string;
@@ -47,6 +47,8 @@ export interface NetworkGraphProps {
   edges: GraphEdge[];
   selected?: string;
   onSelect?: (id: string) => void;
+  /** Where a node's actor or issue has its page; the nodes are then links. */
+  href?: (id: string) => string;
   /** Words for the edge kinds in the legend and table, e.g. "allied" / "opposed". */
   words?: { supportive: string; opposed: string; mixed: string };
 }
@@ -232,6 +234,24 @@ export function NetworkGraph(props: NetworkGraphProps) {
                 ) : null}
               </>
             );
+            const to = props.href?.(n.id);
+            if (props.onSelect && to)
+              return (
+                <a
+                  key={n.id}
+                  href={to}
+                  aria-label={name}
+                  aria-current={props.selected === n.id ? "true" : undefined}
+                  class={`pk-hit${faded ? " pk-faded" : ""}`}
+                  onClick={(e: MouseEvent) => {
+                    if (!followsInApp(e)) return;
+                    e.preventDefault();
+                    props.onSelect?.(n.id);
+                  }}
+                >
+                  {body}
+                </a>
+              );
             return props.onSelect ? (
               <g
                 key={n.id}

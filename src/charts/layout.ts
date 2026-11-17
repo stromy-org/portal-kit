@@ -126,3 +126,8 @@ export function hemicycleSeats(seats: number, rows?: number): Array<[number, num
   });
   return all.sort((a, b) => b.angle - a.angle || a.point[1] - b.point[1]).map((s) => s.point);
 }
+
+/** A plain left click stays in the app; a modified or middle click is the browser's (a new tab). */
+export function followsInApp(e: MouseEvent): boolean {
+  return !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+}
