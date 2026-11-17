@@ -59,7 +59,10 @@ export function summarise(data: BarDatum[], format: (v: number) => string = fmt)
   const tail = hidden ? ` ${hidden} withheld as too few to report.` : "";
   if (shown.length === 0) return `${data.length} values, all withheld as too few to report.`;
   const top = shown.reduce((a, b) => (b.value > a.value ? b : a));
-  return `${data.length} values; highest is ${top.label} at ${format(top.value)}.${tail}`;
+  const bottom = shown.reduce((a, b) => (b.value < a.value ? b : a));
+  // A diverging chart (values below zero) names both ends.
+  const low = bottom.value < 0 ? `, lowest is ${bottom.label} at ${format(bottom.value)}` : "";
+  return `${data.length} values; highest is ${top.label} at ${format(top.value)}${low}.${tail}`;
 }
 
 export function BarChart(props: BarChartProps) {
@@ -71,10 +74,17 @@ export function BarChart(props: BarChartProps) {
   const rowHeight = 28;
   const labelWidth = Math.min(220, Math.round(width * 0.34));
   const height = Math.max(rowHeight, data.length * rowHeight);
-  const max = Math.max(0, ...data.filter((d) => !d.suppressed).map((d) => d.value));
+  const shownValues = data.filter((d) => !d.suppressed).map((d) => d.value);
+  const max = Math.max(0, ...shownValues);
+  const min = Math.min(0, ...shownValues);
+  // Values below zero diverge from a drawn zero line, with room on the left for their labels.
+  const diverging = min < 0;
   const x = scaleLinear()
-    .domain([0, max || 1])
-    .range([0, width - labelWidth - 56]);
+    .domain([min, max || (diverging ? 0 : 1)])
+    .range([diverging ? 44 : 0, width - labelWidth - 56]);
+  const zero = x(0);
+  const barX = (v: number) => labelWidth + Math.min(x(v), zero);
+  const barW = (v: number) => Math.max(1, Math.abs(x(v) - zero));
   const y = scaleBand<string>()
     .domain(data.map((d, i) => `${i}`))
     .range([0, height])
@@ -104,7 +114,7 @@ export function BarChart(props: BarChartProps) {
         label={`Values of ${props.caption}`}
         marks={marks}
         detail={a === null ? null : detail(data[a]!)}
-        at={a === null ? undefined : { x: labelWidth + (data[a]!.suppressed ? 0 : x(data[a]!.value)), y: activeTop }}
+        at={a === null ? undefined : { x: labelWidth + (data[a]!.suppressed ? zero : x(data[a]!.value)), y: activeTop }}
         box={{ w: width, h: height }}
       >
         <svg
@@ -114,6 +124,7 @@ export function BarChart(props: BarChartProps) {
           width="100%"
           preserveAspectRatio="xMinYMin meet"
         >
+          {diverging ? <line class="pk-zero" x1={labelWidth + zero} x2={labelWidth + zero} y1={0} y2={height} /> : null}
           {data.map((d, i) => {
             const top = y(`${i}`) ?? 0;
             const band = y.bandwidth();
@@ -129,8 +140,21 @@ export function BarChart(props: BarChartProps) {
                   </text>
                 ) : (
                   <>
-                    <rect class={`pk-series-${(d.series ?? 0) % 8}`} x={labelWidth} y={0} width={Math.max(1, x(d.value))} height={band} rx={2} />
-                    <text class="pk-chart__value" x={labelWidth + x(d.value) + 6} y={band / 2} dominant-baseline="middle">
+                    <rect
+                      class={`pk-series-${(d.series ?? 0) % 8}${d.value < 0 ? " pk-bar--neg" : ""}`}
+                      x={barX(d.value)}
+                      y={0}
+                      width={barW(d.value)}
+                      height={band}
+                      rx={2}
+                    />
+                    <text
+                      class="pk-chart__value"
+                      x={d.value < 0 ? labelWidth + x(d.value) - 6 : labelWidth + x(d.value) + 6}
+                      y={band / 2}
+                      text-anchor={d.value < 0 ? "end" : undefined}
+                      dominant-baseline="middle"
+                    >
                       {format(d.value)}
                     </text>
                   </>

@@ -378,18 +378,66 @@ export interface QuadrantProps {
   /** Where a point's actor has its page; the marks are then links. */
   href?: (id: string) => string;
   groups?: string[];
+  /** The horizontal scale, low to high (default -1 to +1: alignment). Zero is drawn and named. */
+  xDomain?: [number, number];
+  /** What the axes and corners say (default: voice against alignment). */
+  words?: Partial<QuadrantWords>;
   /** What the voice share is out of, for the card; null when it does not apply. */
   denominator?: string | null;
 }
+
+/** The words a quadrant uses; the defaults read voice against alignment. */
+export interface QuadrantWords {
+  /** The horizontal axis title. */
+  axis: string;
+  /** Under the low end, zero and the high end of the horizontal axis. */
+  low: string;
+  zero: string;
+  high: string;
+  /** Top-left, top-right, bottom-left, bottom-right. */
+  corners: [string, string, string, string];
+  /** A point's side, in words: below, near and above zero. */
+  sides: [string, string, string];
+  /** The horizontal measure in the card and the table heading. */
+  xName: string;
+  xHeading: string;
+  /** The vertical measure: "of the voice" after a percentage, and its table heading. */
+  yOf: string;
+  yHeading: string;
+  /** What a point is ("actor") and what places it, for the summary. */
+  placedBy: string;
+  /** The summary's closing sentence (default: voice is not influence). */
+  footnote: string;
+  /** A point with no horizontal value, in the table. */
+  missing: string;
+}
+
+const VOICE_WORDS: QuadrantWords = {
+  axis: "Alignment with the engagement's position",
+  low: "−1 against",
+  zero: "Neutral",
+  high: "+1 for",
+  corners: ["Loud opponents", "Loud allies", "Quiet opponents", "Quiet allies"],
+  sides: ["against", "neutral", "for"],
+  xName: "alignment",
+  xHeading: "Alignment (-1 to +1)",
+  yOf: "of the voice",
+  yHeading: "Voice",
+  placedBy: "how much voice they have and which way they lean",
+  footnote: "This measures voice, not influence.",
+  missing: "no stance",
+};
 
 export function Quadrant(props: QuadrantProps) {
   const width = 640;
   const height = 400;
   const pad = { top: 24, right: 24, bottom: 48, left: 56 };
+  const w: QuadrantWords = { ...VOICE_WORDS, ...props.words };
+  const [lo, hi] = props.xDomain ?? [-1, 1];
   const plotted = props.points.filter((p) => typeof p.alignment === "number");
   const unplotted = props.points.filter((p) => typeof p.alignment !== "number");
   const maxVoice = Math.max(0.1, ...props.points.map((p) => p.voice));
-  const x = scaleLinear().domain([-1, 1]).range([pad.left, width - pad.right]);
+  const x = scaleLinear().domain([lo, hi]).range([pad.left, width - pad.right]).clamp(true);
   const y = scaleLinear()
     .domain([0, Math.min(1, Math.ceil(maxVoice * 10) / 10)])
     .range([height - pad.bottom, pad.top]);
@@ -400,8 +448,9 @@ export function Quadrant(props: QuadrantProps) {
     plotted.map((p): LabelItem => ({ id: p.id, x: x(p.alignment!), y: y(p.voice), r: radius(p), text: p.label, priority: p.voice })),
     { w: width, h: height - pad.bottom + 8 },
   );
-  const side = (p: QuadrantPoint) => ((p.alignment ?? 0) > 0.05 ? "for" : (p.alignment ?? 0) < -0.05 ? "against" : "neutral");
-  const summary = `${plural(plotted.length, "actor")} placed by how much voice they have and which way they lean${unplotted.length ? `; ${plural(unplotted.length, "entry", "entries")} with no stance is listed in the table only` : ""}. This measures voice, not influence.`;
+  const near = 0.025 * (hi - lo);
+  const side = (p: QuadrantPoint) => ((p.alignment ?? 0) > near ? w.sides[2] : (p.alignment ?? 0) < -near ? w.sides[0] : w.sides[1]);
+  const summary = `${plural(plotted.length, "actor")} placed by ${w.placedBy}${unplotted.length ? `; ${plural(unplotted.length, "entry", "entries")} with ${w.missing} is listed in the table only` : ""}. ${w.footnote}`;
   const y0 = y.domain()[1]!;
   const marks = useMarks(plotted.length);
   const on = marks.active === null ? null : plotted[marks.active]!;
@@ -416,9 +465,9 @@ export function Quadrant(props: QuadrantProps) {
         detail: on
           ? {
               label: on.label,
-              value: `${Math.round(on.voice * 100)}% of the voice; alignment ${on.alignment!.toFixed(2)} (${side(on)})`,
+              value: `${Math.round(on.voice * 100)}% ${w.yOf}; ${w.xName} ${on.alignment!.toFixed(2)} (${side(on)})`,
               n: on.n ?? null,
-              unit: "share of the voice",
+              unit: `share ${w.yOf}`,
               denominator: props.denominator ?? null,
             }
           : null,
@@ -426,18 +475,18 @@ export function Quadrant(props: QuadrantProps) {
       }}
       table={{
         columns: ["actor", "group", "alignment", "voice", "statements"].map(col),
-        labels: { actor: "Actor", group: "Group", alignment: "Alignment (-1 to +1)", voice: "Voice", statements: "Statements" },
+        labels: { actor: "Actor", group: "Group", alignment: w.xHeading, voice: w.yHeading, statements: "Statements" },
         rows: props.points.map((p) => ({
           actor: p.label,
           group: p.group ?? "—",
-          alignment: p.alignment === null ? "no stance" : p.alignment.toFixed(2),
+          alignment: p.alignment === null ? w.missing : p.alignment.toFixed(2),
           voice: `${Math.round(p.voice * 100)}%`,
           statements: p.n ?? "—",
         })),
       }}
     >
-      <rect class="pk-quad pk-quad--for" x={x(0)} y={pad.top} width={x(1) - x(0)} height={y(y0 / 2) - pad.top} />
-      <rect class="pk-quad pk-quad--against" x={x(-1)} y={pad.top} width={x(0) - x(-1)} height={y(y0 / 2) - pad.top} />
+      <rect class="pk-quad pk-quad--for" x={x(0)} y={pad.top} width={x(hi) - x(0)} height={y(y0 / 2) - pad.top} />
+      <rect class="pk-quad pk-quad--against" x={x(lo)} y={pad.top} width={x(0) - x(lo)} height={y(y0 / 2) - pad.top} />
       {y.ticks(4).map((t) => (
         <g key={t}>
           <line class="pk-chart__grid" x1={pad.left} x2={width - pad.right} y1={y(t)} y2={y(t)} />
@@ -450,33 +499,33 @@ export function Quadrant(props: QuadrantProps) {
       <line class="pk-zero" x1={x(0)} x2={x(0)} y1={pad.top} y2={height - pad.bottom} />
       <line class="pk-zero" x1={pad.left} x2={width - pad.right} y1={height - pad.bottom} y2={height - pad.bottom} />
       <text class="pk-chart__axis" x={x(0)} y={height - pad.bottom + 16} text-anchor="middle">
-        Neutral
+        {w.zero}
       </text>
       <text class="pk-chart__axis" x={pad.left} y={height - pad.bottom + 16}>
-        −1 against
+        {w.low}
       </text>
       <text class="pk-chart__axis" x={width - pad.right} y={height - pad.bottom + 16} text-anchor="end">
-        +1 for
+        {w.high}
       </text>
       <text class="pk-chart__axis" x={(pad.left + width - pad.right) / 2} y={height - 8} text-anchor="middle">
-        Alignment with the engagement's position
+        {w.axis}
       </text>
       <text class="pk-chart__axis" x={pad.left + 4} y={pad.top + 12}>
-        Loud opponents
+        {w.corners[0]}
       </text>
       <text class="pk-chart__axis" x={width - pad.right - 4} y={pad.top + 12} text-anchor="end">
-        Loud allies
+        {w.corners[1]}
       </text>
       <text class="pk-chart__axis" x={pad.left + 4} y={height - pad.bottom - 6}>
-        Quiet opponents
+        {w.corners[2]}
       </text>
       <text class="pk-chart__axis" x={width - pad.right - 4} y={height - pad.bottom - 6} text-anchor="end">
-        Quiet allies
+        {w.corners[3]}
       </text>
       {plotted.map((p, i) => {
         const label = placed[i]!;
         const series = Math.max(0, groups.indexOf(p.group ?? "")) % 8;
-        const name = `${p.label}: ${side(p)}, ${Math.round(p.voice * 100)}% of the voice`;
+        const name = `${p.label}: ${side(p)}, ${Math.round(p.voice * 100)}% ${w.yOf}`;
         const mark = (
           <>
             <circle class={`pk-series-${series} pk-bubble`} cx={x(p.alignment!)} cy={y(p.voice)} r={radius(p)} />
