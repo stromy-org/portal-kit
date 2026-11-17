@@ -202,6 +202,8 @@ path.pk-line[class*="pk-series-"] { fill: none; }
 .pk-chart svg text.pk-chart__group { font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; }
 .pk-chart svg text.pk-chart__axis { fill: var(--pk-muted); }
 .pk-zero { stroke: var(--pk-ink); stroke-width: 1.5; stroke-dasharray: 5 3; }
+/* A bar below zero: its side of the zero line and its signed label carry it, the colour repeats it. */
+.pk-chart rect.pk-bar--neg { fill: var(--pk-opp); }
 .pk-bubble { fill-opacity: 0.8; stroke: var(--pk-surface); stroke-width: 1.5; }
 .pk-event { stroke: var(--pk-ink); stroke-width: 1; }
 .pk-quad { fill: transparent; }

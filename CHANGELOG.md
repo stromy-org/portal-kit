@@ -3,6 +3,18 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.6.0 — 2026-11-17
+
+Visuals for the panels that were tables only (ORG-PLAN-605 VIS):
+
+- `BarChart` diverges when a value is below zero: bars grow left and right of a drawn,
+  dashed zero line, the label is signed and sits outside the bar, and a bar below zero is
+  `pk-bar--neg` (the opposed colour, repeating what its side and sign already say). The
+  summary names the lowest value too. All-positive charts are unchanged.
+- `Quadrant` reads any two measures: `xDomain` sets the horizontal scale (default -1 to
+  +1) and `words` its axis, ends, corners, sides, card and table wording. The defaults
+  still read voice against alignment.
+
 ## v0.5.1 — 2026-11-17
 
 - Fix: pressing on a `NetworkGraph` node that is a link (`href`) started a pan and captured
