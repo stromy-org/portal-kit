@@ -3,6 +3,12 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.6.1 — 2026-11-17
+
+- Fix: a `Quadrant` point's label could land on a corner word ("Loud allies", or
+  "Much attention, positive" in a re-worded quadrant). `placeLabels` takes `obstacles`, fixed
+  text already drawn, and the quadrant passes its four corner words.
+
 ## v0.6.0 — 2026-11-17
 
 Visuals for the panels that were tables only (ORG-PLAN-605 VIS):
