@@ -40,4 +40,16 @@ describe("NetworkGraph", () => {
     fireEvent.keyDown(getByRole("button", { name: /^Issue Node 4,/ }), { key: "Enter" });
     expect(onSelect.mock.calls.map((c) => c[0])).toEqual(["n1", "n4"]);
   });
+
+  it("with an href, a node is a link and a plain click still selects in the app", () => {
+    const onSelect = vi.fn();
+    const { container } = render(<NetworkGraph caption="Network" nodes={nodes} edges={edges} onSelect={onSelect} href={(id) => `/x/actor/?id=${id}`} />);
+    const links = [...container.querySelectorAll("a.pk-hit")];
+    expect(links).toHaveLength(nodes.length);
+    expect(container.querySelectorAll("[role=button].pk-hit")).toHaveLength(0);
+    expect(links[0]!.getAttribute("href")).toBe(`/x/actor/?id=${nodes[0]!.id}`);
+    expect(fireEvent.click(links[0]!)).toBe(false);
+    expect(onSelect).toHaveBeenCalledWith(nodes[0]!.id);
+    expect(fireEvent.click(links[0]!, { shiftKey: true })).toBe(true);
+  });
 });

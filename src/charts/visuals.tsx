@@ -23,7 +23,7 @@ import { useId, useRef } from "preact/hooks";
 import type { Column } from "../contract/index.ts";
 import { DataTable } from "../ui/index.tsx";
 import { type MarkDetail, type Marks, markHandlers, Plot, useMarks, useZoomX, ZoomTools } from "./interact.tsx";
-import { hemicycleSeats, type LabelItem, placeLabels, wrapLabel } from "./layout.ts";
+import { followsInApp, hemicycleSeats, type LabelItem, placeLabels, wrapLabel } from "./layout.ts";
 
 type Polarity = "supportive" | "opposed" | "mixed";
 
@@ -87,14 +87,38 @@ function Frame(props: {
 }
 
 /** A keyboard-reachable SVG button. */
+/**
+ * One selectable mark. With `href` it is a link (an entity's page: it reloads, opens in a new
+ * tab and is shared); a plain click still navigates in the app through `onActivate`. Without
+ * one it is a button that changes the page (a filter).
+ */
 function Hit(props: {
   label: string;
   onActivate: () => void;
   pressed?: boolean;
+  href?: string;
   children: ComponentChildren;
   class?: string;
   handlers?: ReturnType<typeof markHandlers>;
 }) {
+  const cls = `pk-hit${props.pressed ? " pk-hit--on" : ""}${props.class ? ` ${props.class}` : ""}`;
+  if (props.href)
+    return (
+      <a
+        {...props.handlers}
+        href={props.href}
+        aria-label={props.label}
+        aria-current={props.pressed ? "true" : undefined}
+        class={cls}
+        onClick={(e: MouseEvent) => {
+          if (!followsInApp(e)) return;
+          e.preventDefault();
+          props.onActivate();
+        }}
+      >
+        {props.children}
+      </a>
+    );
   return (
     <g
       {...props.handlers}
@@ -102,7 +126,7 @@ function Hit(props: {
       tabindex={0}
       aria-label={props.label}
       aria-pressed={props.pressed === undefined ? undefined : props.pressed}
-      class={`pk-hit${props.pressed ? " pk-hit--on" : ""}${props.class ? ` ${props.class}` : ""}`}
+      class={cls}
       onClick={props.onActivate}
       onKeyDown={(e: KeyboardEvent) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -115,6 +139,9 @@ function Hit(props: {
     </g>
   );
 }
+
+/** What a mark's label says it does: open a page (a link) or the details (a button). */
+const opens = (href: string | undefined) => (href ? "open its page" : "open details");
 
 const col = (name: string): Column => ({ name, type: "VARCHAR" });
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -164,6 +191,9 @@ export interface StanceMatrixProps {
   selectedCol?: string;
   onRow?: (id: string) => void;
   onCol?: (id: string) => void;
+  /** Where a row's actor and a column's issue have their pages; the marks are then links. */
+  rowHref?: (id: string) => string;
+  colHref?: (id: string) => string;
   onCell?: (row: string, col: string) => void;
   /** What a cell's count is out of, for the card; null when it does not apply. */
   denominator?: string | null;
@@ -264,7 +294,7 @@ export function StanceMatrix(props: StanceMatrixProps) {
           </>
         );
         return props.onCol ? (
-          <Hit key={c.id} label={`Issue ${c.label}: open details`} pressed={props.selectedCol === c.id} onActivate={() => props.onCol?.(c.id)}>
+          <Hit key={c.id} label={`Issue ${c.label}: ${opens(props.colHref?.(c.id))}`} pressed={props.selectedCol === c.id} href={props.colHref?.(c.id)} onActivate={() => props.onCol?.(c.id)}>
             <rect x={x - cellW / 2 + 2} y={0} width={cellW - 4} height={headH - 6} class="pk-hit__area" />
             {head}
           </Hit>
@@ -287,7 +317,7 @@ export function StanceMatrix(props: StanceMatrixProps) {
               </text>
             );
             return props.onRow ? (
-              <Hit label={`Actor ${row.label}: open details`} pressed={props.selectedRow === row.id} onActivate={() => props.onRow?.(row.id)}>
+              <Hit label={`Actor ${row.label}: ${opens(props.rowHref?.(row.id))}`} pressed={props.selectedRow === row.id} href={props.rowHref?.(row.id)} onActivate={() => props.onRow?.(row.id)}>
                 <rect x={0} y={top} width={labelW - 4} height={rowH} class="pk-hit__area" />
                 {label}
               </Hit>
@@ -345,6 +375,8 @@ export interface QuadrantProps {
   points: QuadrantPoint[];
   selected?: string;
   onSelect?: (id: string) => void;
+  /** Where a point's actor has its page; the marks are then links. */
+  href?: (id: string) => string;
   groups?: string[];
   /** What the voice share is out of, for the card; null when it does not apply. */
   denominator?: string | null;
@@ -457,7 +489,7 @@ export function Quadrant(props: QuadrantProps) {
           </>
         );
         return props.onSelect ? (
-          <Hit key={p.id} label={name} pressed={props.selected === p.id} onActivate={() => props.onSelect?.(p.id)} handlers={markHandlers(i, marks)}>
+          <Hit key={p.id} label={name} pressed={props.selected === p.id} href={props.href?.(p.id)} onActivate={() => props.onSelect?.(p.id)} handlers={markHandlers(i, marks)}>
             {mark}
           </Hit>
         ) : (
@@ -649,6 +681,8 @@ export interface SwimlanesProps {
   lanes: Lane[];
   selected?: string;
   onLane?: (id: string) => void;
+  /** Where a lane's story has its page; the lane labels are then links. */
+  laneHref?: (id: string) => string;
   onEvent?: (lane: string, event: string) => void;
   /** Zoom and pan the time axis (a local view). */
   zoomable?: boolean;
@@ -755,7 +789,7 @@ export function Swimlanes(props: SwimlanesProps) {
           <g key={lane.id}>
             <line class="pk-chart__grid" x1={labelW} x2={width - 8} y1={mid} y2={mid} />
             {props.onLane ? (
-              <Hit label={`Story ${lane.label}: open details`} pressed={props.selected === lane.id} onActivate={() => props.onLane?.(lane.id)}>
+              <Hit label={`Story ${lane.label}: ${opens(props.laneHref?.(lane.id))}`} pressed={props.selected === lane.id} href={props.laneHref?.(lane.id)} onActivate={() => props.onLane?.(lane.id)}>
                 {head}
               </Hit>
             ) : (

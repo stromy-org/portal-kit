@@ -3,6 +3,18 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.5.0 — 2026-11-17
+
+Chart marks can be links (ORG-PLAN-605 ENTITY):
+
+- `StanceMatrix` (`rowHref`, `colHref`), `Quadrant` (`href`), `Swimlanes` (`laneHref`) and
+  `NetworkGraph` (`href`) take an optional page address per mark. With one, the mark is an
+  SVG `<a href>` labelled "open its page" (`aria-current` when selected), so an entity page
+  reloads, opens in a new tab and is shared. A plain left click still calls the chart's
+  handler and stays in the app; a modified or middle click is left to the browser.
+  Without an address a mark is the button it was.
+- `followsInApp(event)` is exported for links the satellite draws itself.
+
 ## v0.4.0 — 2026-11-17
 
 The interaction layer (ORG-PLAN-605 KIT), one shared module (`interact.tsx`) every chart uses:
