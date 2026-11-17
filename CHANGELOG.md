@@ -8,6 +8,9 @@ from the `version` in `package.json`.
 - Fix: a `Quadrant` point's label could land on a corner word ("Loud allies", or
   "Much attention, positive" in a re-worded quadrant). `placeLabels` takes `obstacles`, fixed
   text already drawn, and the quadrant passes its four corner words.
+- Fix: `BarChart` value labels are measured. A long label ("+50.0 pts") was clipped at the
+  right edge, and a negative one ran into its row's name; the chart now reserves the room
+  its labels need on each side.
 
 ## v0.6.0 — 2026-11-17
 

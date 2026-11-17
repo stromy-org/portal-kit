@@ -115,3 +115,24 @@ describe("Quadrant labels", () => {
     }
   });
 });
+
+describe("BarChart value labels", () => {
+  it("keep clear of the right edge and of the row names (the movers chart)", async () => {
+    const { textWidth } = await import("../src/index.ts");
+    const fmtPts = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)} pts`;
+    const data = [
+      { label: "Eastline Power", value: 50 },
+      { label: "Northwind Grid", value: 0 },
+      { label: "Westvale Energy", value: -50 },
+    ];
+    const { container } = render(<BarChart caption="Change" data={data} format={fmtPts} />);
+    const width = 640;
+    const labelWidth = Math.min(220, Math.round(width * 0.34));
+    for (const t of container.querySelectorAll("text.pk-chart__value")) {
+      const x = Number(t.getAttribute("x"));
+      const w = textWidth(t.textContent ?? "", 12);
+      if (t.getAttribute("text-anchor") === "end") expect(x - w, t.textContent!).toBeGreaterThanOrEqual(labelWidth);
+      else expect(x + w, t.textContent!).toBeLessThanOrEqual(width);
+    }
+  });
+});

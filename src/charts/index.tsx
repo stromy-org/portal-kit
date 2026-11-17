@@ -19,6 +19,7 @@ import { useId, useRef, useState } from "preact/hooks";
 
 import type { Column } from "../contract/index.ts";
 import { DataTable } from "../ui/index.tsx";
+import { textWidth } from "./layout.ts";
 import { type MarkDetail, markHandlers, Plot, SeriesLegend, svgPoint, useBrushX, useMarks, useToggles, useZoomX, ZoomTools } from "./interact.tsx";
 
 export interface BarDatum {
@@ -79,9 +80,15 @@ export function BarChart(props: BarChartProps) {
   const min = Math.min(0, ...shownValues);
   // Values below zero diverge from a drawn zero line, with room on the left for their labels.
   const diverging = min < 0;
+  // Room for the value labels, measured: right of the longest bar and, when diverging, left of
+  // the most negative one, so no label is clipped at the edge or runs into the row's name.
+  const labelRoom = (values: number[]) => Math.max(0, ...values.map((v) => textWidth(format(v), 12))) + 12;
+  const shown = data.filter((d) => !d.suppressed);
+  const right = Math.max(56, labelRoom(shown.filter((d) => d.value >= 0).map((d) => d.value)));
+  const left = diverging ? labelRoom(shown.filter((d) => d.value < 0).map((d) => d.value)) : 0;
   const x = scaleLinear()
     .domain([min, max || (diverging ? 0 : 1)])
-    .range([diverging ? 44 : 0, width - labelWidth - 56]);
+    .range([left, width - labelWidth - right]);
   const zero = x(0);
   const barX = (v: number) => labelWidth + Math.min(x(v), zero);
   const barW = (v: number) => Math.max(1, Math.abs(x(v) - zero));
