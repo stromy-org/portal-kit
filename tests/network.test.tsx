@@ -52,4 +52,18 @@ describe("NetworkGraph", () => {
     expect(onSelect).toHaveBeenCalledWith(nodes[0]!.id);
     expect(fireEvent.click(links[0]!, { shiftKey: true })).toBe(true);
   });
+
+  it("pressing on a link node starts no pan, so its click still lands (the v0.5.0 regression)", () => {
+    // In the browser a pan captures the pointer on the svg, and the link node never saw its click.
+    const { container } = render(<NetworkGraph caption="Network" nodes={nodes} edges={edges} onSelect={() => {}} href={(id) => `/x/actor/?id=${id}`} />);
+    const svg = container.querySelector("svg")!;
+    const capture = vi.fn();
+    (svg as unknown as { setPointerCapture: (id: number) => void }).setPointerCapture = capture;
+    fireEvent.pointerDown(container.querySelector("a.pk-hit")!, { pointerId: 1 });
+    expect(capture).not.toHaveBeenCalled();
+    // The control: pressing on the background does start a pan.
+    fireEvent.pointerDown(svg, { pointerId: 2 });
+    expect(capture).toHaveBeenCalledTimes(1);
+  });
 });
+

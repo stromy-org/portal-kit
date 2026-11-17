@@ -179,7 +179,8 @@ export function NetworkGraph(props: NetworkGraphProps) {
           zoomTo(view.k * (e.deltaY < 0 ? 1.15 : 1 / 1.15), ((e.clientX - box.left) / box.width) * W, ((e.clientY - box.top) / box.height) * H);
         }}
         onPointerDown={(e: PointerEvent) => {
-          if ((e.target as Element).closest("[role=button]")) return;
+          // A node (a button, or a link to its page) keeps its own click: no pan starts on it.
+          if ((e.target as Element).closest("[role=button], a[href]")) return;
           drag.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y };
           (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
         }}

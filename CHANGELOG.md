@@ -3,6 +3,11 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.5.1 — 2026-11-17
+
+- Fix: pressing on a `NetworkGraph` node that is a link (`href`) started a pan and captured
+  the pointer, so the node's click never landed. A pan now starts only off a node.
+
 ## v0.5.0 — 2026-11-17
 
 Chart marks can be links (ORG-PLAN-605 ENTITY):
