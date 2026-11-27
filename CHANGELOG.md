@@ -14,6 +14,9 @@ from the `version` in `package.json`.
   second time, and `signOut()` stops it too, so a real signed-out state keeps its page.
 - `AuthOptions.autoSignIn` (default `true`) turns it off; `AuthOptions.storage` injects the
   per-tab marker's storage (`AUTO_SIGNIN_KEY`) in tests.
+- The nav contract keeps an engagement's `display_name` (fleet Intel T54), and
+  `engagementLabel(entry, position)` gives a shell the label to show: the name, else a
+  neutral "Engagement <n>", never the raw engagement id.
 
 ## v0.6.1 — 2026-11-17
 

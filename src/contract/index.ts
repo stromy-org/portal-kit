@@ -18,6 +18,8 @@ export interface NavEntry {
   period_id: string | null;
   release_kind?: string | null;
   built_at?: string;
+  /** What to show for the engagement (the tenant registry's name, or the reader's neutral label). */
+  display_name?: string;
 }
 
 export interface Nav {
@@ -94,9 +96,19 @@ export function parseNav(v: unknown): Nav {
     const entry: NavEntry = { engagement: e.engagement, period_id: e.period_id as string | null };
     if (e.release_kind === null || isString(e.release_kind)) entry.release_kind = e.release_kind;
     if (isString(e.built_at)) entry.built_at = e.built_at;
+    if (isString(e.display_name) && e.display_name.trim()) entry.display_name = e.display_name;
     return entry;
   });
   return { engagements };
+}
+
+/**
+ * The label a shell shows for an engagement: its `display_name`, else a neutral
+ * "Engagement <n>" (`position` is 1-based). Never the raw engagement id, which is a
+ * routing key, not a name a client should read.
+ */
+export function engagementLabel(entry: Pick<NavEntry, "display_name">, position: number): string {
+  return entry.display_name?.trim() ? entry.display_name : `Engagement ${position}`;
 }
 
 export function parseBrand(v: unknown): Brand {
