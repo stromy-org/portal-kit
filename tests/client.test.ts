@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ContractError, GatekeeperClient, GatekeeperError, parseBrand, parseNav, parseRecipe } from "../src/index.ts";
+import { ContractError, engagementLabel, GatekeeperClient, GatekeeperError, parseBrand, parseNav, parseRecipe } from "../src/index.ts";
 
 const RECIPE = {
   key: "sov_by_theme",
@@ -43,6 +43,26 @@ function client(responses: Array<Response | Error>, extra: Partial<ConstructorPa
 }
 
 describe("contract", () => {
+  // Fleet Intel T54: the nav carries a name to show, so a shell never shows the raw id.
+  it("keeps the engagement's display name and labels an unnamed one neutrally", () => {
+    const nav = parseNav({
+      engagements: [
+        { engagement: "eng_1", period_id: "2026-10", display_name: "Pilot (test)" },
+        { engagement: "eng_2", period_id: "2026-10" },
+        { engagement: "eng_3", period_id: "2026-10", display_name: "  " },
+        { engagement: "eng_4", period_id: "2026-10", display_name: 7 },
+      ],
+    });
+    expect(nav.engagements.map((e, i) => engagementLabel(e, i + 1))).toEqual([
+      "Pilot (test)",
+      "Engagement 2",
+      "Engagement 3",
+      "Engagement 4",
+    ]);
+    expect(nav.engagements.map((e, i) => engagementLabel(e, i + 1)).join(" ")).not.toMatch(/eng_/);
+  });
+
+
   it("accepts the gatekeeper's shapes and refuses drift", () => {
     expect(parseNav({ engagements: [{ engagement: "eng_1", period_id: null }] }).engagements[0]?.period_id).toBeNull();
     expect(() => parseNav({ engagements: [{ engagement: 3 }] })).toThrow(ContractError);

@@ -3,6 +3,21 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.7.0 — 2026-11-27
+
+- A fresh tab signs in without a click (ORG-PLAN-369 D87). The token cache stays in
+  `sessionStorage` (portal-shell decision 5), so a new tab starts with no cached account;
+  `startSession` now redirects once per tab with `prompt=none`, and while the Entra session
+  lives the account comes back with no prompt. When Entra needs an interaction (no session,
+  several accounts, consent) the refusal is the signed-out state: `startSession` returns
+  `session: null` and the shell shows its Sign in page. The tab never tries on its own a
+  second time, and `signOut()` stops it too, so a real signed-out state keeps its page.
+- `AuthOptions.autoSignIn` (default `true`) turns it off; `AuthOptions.storage` injects the
+  per-tab marker's storage (`AUTO_SIGNIN_KEY`) in tests.
+- The nav contract keeps an engagement's `display_name` (fleet Intel T54), and
+  `engagementLabel(entry, position)` gives a shell the label to show: the name, else a
+  neutral "Engagement <n>", never the raw engagement id.
+
 ## v0.6.1 — 2026-11-17
 
 - Fix: a `Quadrant` point's label could land on a corner word ("Loud allies", or
