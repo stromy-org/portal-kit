@@ -93,6 +93,40 @@ describe("Quadrant with its own measures", () => {
   });
 });
 
+describe("BarChart row names", () => {
+  // Fleet Intel T74 (2026-11-28): a 35-character issue name on the hosted overview ran past the
+  // SVG's left edge and lost its first letters. Every line of a row name now fits its column.
+  const long = "SPRINT under the European Chips Act";
+
+  it("wraps a name wider than its column, and every line fits left of the bars", async () => {
+    const { textWidth } = await import("../src/index.ts");
+    const { container } = render(<BarChart caption="Top issues" data={[{ label: long, value: 7 }, { label: "Export controls", value: 3 }]} />);
+    const [first, second] = [...container.querySelectorAll("text.pk-chart__label")];
+    const lines = [...first!.querySelectorAll("tspan")].map((t) => t.textContent ?? "");
+    expect(lines.length).toBe(2);
+    expect(lines.join(" ")).toBe(long); // nothing lost, nothing cut
+    const column = Number(first!.getAttribute("x")); // right-aligned at the column's edge
+    for (const line of lines) expect(textWidth(line, 12)).toBeLessThanOrEqual(column);
+    // A short name stays one plain line; the whole name stays in the table.
+    expect(second!.querySelector("tspan")).toBeNull();
+    expect(second!.textContent).toBe("Export controls");
+    expect([...container.querySelectorAll("td")].map((td) => td.textContent)).toContain(long);
+  });
+
+  it("ends a name too long for two lines in an ellipsis, and keeps one-line rows at their height", async () => {
+    const { textWidth } = await import("../src/index.ts");
+    const huge = "Commission proposal on the governance of strategic semiconductor supply chains and their financing";
+    const { container } = render(<BarChart caption="Top" data={[{ label: huge, value: 2 }]} />);
+    const label = container.querySelector("text.pk-chart__label")!;
+    const lines = [...label.querySelectorAll("tspan")].map((t) => t.textContent ?? "");
+    expect(lines.length).toBe(2);
+    expect(lines[1]!.endsWith("…")).toBe(true);
+    for (const line of lines) expect(textWidth(line, 12)).toBeLessThanOrEqual(Number(label.getAttribute("x")));
+    const short = render(<BarChart caption="S" data={[{ label: "A", value: 1 }]} />);
+    expect(short.container.querySelector("svg")!.getAttribute("viewBox")).toBe("0 0 640 28");
+  });
+});
+
 describe("Quadrant labels", () => {
   it("never places a point's label over a corner word (the attention-against-tone overlap)", async () => {
     const { textWidth } = await import("../src/index.ts");

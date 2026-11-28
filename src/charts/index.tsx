@@ -19,7 +19,7 @@ import { useId, useRef, useState } from "preact/hooks";
 
 import type { Column } from "../contract/index.ts";
 import { DataTable } from "../ui/index.tsx";
-import { textWidth } from "./layout.ts";
+import { textWidth, wrapLabel } from "./layout.ts";
 import { type MarkDetail, markHandlers, Plot, SeriesLegend, svgPoint, useBrushX, useMarks, useToggles, useZoomX, ZoomTools } from "./interact.tsx";
 
 export interface BarDatum {
@@ -72,8 +72,14 @@ export function BarChart(props: BarChartProps) {
   const [hidden, toggle] = useToggles();
   const data = props.data.filter((d) => !hidden.has(d.series ?? 0));
   const marks = useMarks(data.length);
-  const rowHeight = 28;
   const labelWidth = Math.min(220, Math.round(width * 0.34));
+  // A row's name sits right-aligned left of its bar. A name wider than its column ran past
+  // the SVG's left edge and lost its first letters (a 35-character issue name on the overview),
+  // so it wraps onto a second line and, past that, ends in an ellipsis; the card and the
+  // table keep the whole name. The rows grow when any name needs two lines.
+  const labelChars = Math.max(8, Math.floor((labelWidth - 8) / (12 * 0.56)));
+  const names = data.map((d) => wrapLabel(d.label, labelChars, 2));
+  const rowHeight = names.some((lines) => lines.length > 1) ? 40 : 28;
   const height = Math.max(rowHeight, data.length * rowHeight);
   const shownValues = data.filter((d) => !d.suppressed).map((d) => d.value);
   const max = Math.max(0, ...shownValues);
@@ -139,7 +145,13 @@ export function BarChart(props: BarChartProps) {
               <g key={`${d.label}-${i}`} transform={`translate(0 ${top})`} class={`pk-mark${a === i ? " pk-mark--on" : ""}`} {...markHandlers(i, marks)}>
                 <rect class="pk-hit__area" x={0} y={-band * 0.15} width={width} height={band * 1.3} />
                 <text class="pk-chart__label" x={labelWidth - 8} y={band / 2} text-anchor="end" dominant-baseline="middle">
-                  {d.label}
+                  {names[i]!.length === 1
+                    ? names[i]![0]
+                    : names[i]!.map((part, li) => (
+                        <tspan key={li} x={labelWidth - 8} dy={li === 0 ? "-0.6em" : "1.2em"}>
+                          {part}
+                        </tspan>
+                      ))}
                 </text>
                 {d.suppressed ? (
                   <text class="pk-chart__value pk-chart__value--withheld" x={labelWidth + 6} y={band / 2} dominant-baseline="middle">

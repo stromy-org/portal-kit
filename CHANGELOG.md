@@ -3,6 +3,14 @@
 All notable changes to `@stromy/portal-kit`. Each release is a tag cut by `release.yml`
 from the `version` in `package.json`.
 
+## v0.7.1 — 2026-11-28
+
+- Fix: a `BarChart` row name wider than its column (about 31 characters at the default
+  width) ran past the chart's left edge and lost its first letters, as on the hosted
+  overview's "Top issues" (fleet Intel T74). The name now wraps onto a second line, and a
+  name too long for two lines ends in an ellipsis; rows grow to 40 px only when a name
+  wraps. The card, the summary and the data table keep the whole name.
+
 ## v0.7.0 — 2026-11-27
 
 - A fresh tab signs in without a click (ORG-PLAN-369 D87). The token cache stays in
